@@ -40,6 +40,24 @@ immediate_neighbors(XX,YY,TYPE, COUNT) :-
 					terrain_type(TYPE).
 					
 					
+horizontal(XX,YY,start) :- terrain(XX,YY,bridge), terrain(XX-1,YY,grass).
+horizontal(XX,YY,start) :- terrain(XX,YY,bridge), terrain(XX+1,YY,grass).
+horizontal(XX,YY,mid) :- terrain(XX,YY,bridge), horizontal(XX-1,YY,_).
+horizontal(XX,YY,mid) :- terrain(XX,YY,bridge), horizontal(XX+1,YY,_).
+
+
+vertical(XX,YY,start) :- terrain(XX,YY,bridge), terrain(XX,YY+1,grass).
+vertical(XX,YY,start) :- terrain(XX,YY,bridge), terrain(XX,YY-1,grass).
+vertical(XX,YY,mid) :- terrain(XX,YY,bridge), vertical(XX,YY-1,_).
+vertical(XX,YY,mid) :- terrain(XX,YY,bridge), vertical(XX,YY+1,_).
+
+:- terrain(XX,YY,bridge), not horizontal(XX,YY,_), not vertical(XX,YY,_).
+:- terrain(XX,YY,bridge), horizontal(XX,YY,_), vertical(XX,YY,_).
+:- horizontal(X1,YY,start), horizontal(X2,YY,start), X1-X2=1.
+:- vertical(XX,Y1,start), vertical(XX,Y2,start), Y1-Y2=1.
+:- horizontal(XX,Y1,start), horizontal(XX,Y2,start), Y1-Y2=1.
+:- vertical(X1,YY,start), vertical(X2,YY,start), X1-X2=1.
+
 :- {terrain(XX,YY,grass)} max_width*max_height*1/2 .
 
 :- {terrain(XX,YY,water)} max_width*max_height*1/6 .
@@ -48,7 +66,7 @@ immediate_neighbors(XX,YY,TYPE, COUNT) :-
 
 :- terrain(XX,YY,flower), neighbors(XX,YY,flower, COUNT), COUNT > 3.
 
-:- terrain(XX,YY,water), neighbors(XX,YY,water, COUNT), COUNT < 3.
+:- terrain(XX,YY,water), neighbors(XX,YY,water, COUNT), COUNT < 4.
 
 :- terrain(XX,YY,bridge), neighbors(XX,YY,water, COUNT), COUNT < 4.
 
@@ -74,4 +92,16 @@ connected(XX,YY) :- terrain(XX,YY,bridge), 1 {connected(XX,YY-1);
 																	
 :- terrain(XX,YY,bridge), not connected(XX,YY).
 
+1 {reachable(XX,YY,original) : width(XX), 
+	height(YY)} 1.
+    
+:- reachable(XX,YY,original), not terrain(XX,YY,grass).
+reachable(XX,YY) :- reachable(XX,YY,original).
 
+reachable(XX,YY) :- reachable(XX+1,YY), not terrain(XX,YY,water), width(XX), height(YY).
+reachable(XX,YY) :- reachable(XX-1,YY), not terrain(XX,YY,water), width(XX), height(YY).
+reachable(XX,YY) :- reachable(XX,YY+1), not terrain(XX,YY,water), width(XX), height(YY).
+reachable(XX,YY) :- reachable(XX,YY-1), not terrain(XX,YY,water), width(XX), height(YY).
+
+
+:- terrain(XX,YY,TERRAIN), TERRAIN != water, not reachable(XX,YY).
