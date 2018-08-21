@@ -1,0 +1,36 @@
+* Conda instructions (Mac, Linux)
+
+These instructions assume a working miniconda or anaconda installation.
+
+First, you'll need to set up a conda environment for the projects: 
+
+#+BEGIN_SRC bash :session
+conda create -n minecraft-assignments python=3.6 numpy scipy matplotlib scikit-learn ffmpeg openjdk pulp
+# This is a line you'll be typing in every new terminal window
+source activate minecraft-assignments
+#+END_SRC
+
+We are using the CrowdAI conda recipe for Malmo, so we'll need to install that separately:
+#+BEGIN_SRC bash :session
+conda config --add channels conda-forge 
+conda install -c crowdai malmo
+#+END_SRC
+
+Next we'll throw in the z3-solver package, which has no Conda recipe:
+#+BEGIN_SRC bash :session
+pip install z3-solver
+#+END_SRC
+
+In the exercises which use Malmo, you'll need two terminal windows.  In one, launch Minecraft:
+
+#+BEGIN_SRC bash :results none
+source activate minecraft-assignments
+cd "$MALMO_MINECRAFT_ROOT" && ./launchClient.sh
+#+END_SRC
+
+In the other, run your Python script (make sure the minecraft-assignments environment is active here too!):
+
+#+BEGIN_SRC bash :results none
+source activate minecraft-assignments
+python mission_script.py
+#+END_SRC
