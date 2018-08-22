@@ -136,7 +136,6 @@ def generate_world_and_description():
               ('river','lake',),
               ('pig',),
               ('cow',),
-              ('sheep',),
               ('zombie',),
               ('creeper',)]
     number_of_things = random.randint(1,3)
