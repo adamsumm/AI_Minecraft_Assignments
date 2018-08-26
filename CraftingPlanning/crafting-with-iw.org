@@ -48,6 +48,7 @@ import array
 import heapq
 import math
 import time
+import itertools
 
 with open('Crafting.json') as f:
     Crafting = json.load(f)
@@ -228,9 +229,9 @@ def plan_astar(initial: State, goal: State) -> Optional[Tuple[int, State, List[s
     pass
 #+END_SRC
 
-10. What's the largest planning problem (initial and goal state) you can think up which your algorith can solve within 30 seconds?  How many nodes does it visit?
+10. What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit and how long does it take exactly?  What heuristic ended up working best?
 
-** TODO Planning with Iterative Widening
+** Planning with Iterative Widening
 
 Let's compare against a dedicated planning algorithm, rather than applying graph search naively.
 Planning domains have some significant differences from general graph search problems---let's reflect on what they might be.
@@ -261,21 +262,21 @@ class Proposition(NamedTuple):
     item: int
     at_least: int
 
-def recipe_to_propositions(recipe: Recipe) -> Set[Proposition]:
+def recipe_propositions(recipe: Recipe) -> Set[Proposition]:
     propositions: Set[Proposition] = set()
     # Do something with recipe.consumes, recipe.produces, and recipe.requires.
     # Emit, for this recipe, all the propositions entailed by the preconditions AND by the postconditions.
     return propositions
 
-all_propositions = set()
+recipe_propositions = set()
 for r in recipes.values():
-    all_propositions |= recipe_to_propositions(r)
+    recipe_propositions |= recipe_to_propositions(r)
 #+END_SRC
 
 We also need to be able to convert initial and goal states into sets of propositions, so we'll have a function to do that once we start our search algorithm: 
 
 #+BEGIN_SRC python
-def state_to_propositions(state: State) -> Set[Proposition]:
+def state_propositions(state: State) -> Set[Proposition]:
     propositions: Set[Proposition] = set()
     # Do something for each item in state.
     return propositions
@@ -284,81 +285,86 @@ def state_to_propositions(state: State) -> Set[Proposition]:
 We can capture the notion of "ignoring states that are not different enough" by using the idea of a closed set from the cycle prevention techniques in graph search.
 Instead of checking that the newly expanded state is present in a set of seen states, we can check whether it offers any predicate combinations of width up to $W$ we haven't already encountered at width bound $W$.
 Given the set of propositions that are important in our state, we want to create a list of all the propositions and combinations of up to $W$ propositions.
-When considering a newly expanded state $s$, we find all of the unique combinations of propositions that are true in $s$ and return the size of the smallest such combination to use as the priority of $s$ in a best-first search.
+When considering a newly expanded state $s$, we find all of the unique combinations of propositions that are true in $s$ and return the size of the smallest such combination; we compare this size against $W$ and give up if it is too high.
 
 For example:
 - If $s$ was the first state we've seen with =bench>=1= it would have width 1; we use the closed set to determine whether a given combination has been seen before.
 - If $s$ was the first state with =bench>=1= and =wooden_axe>=1= but no new atomic propositions, it would have width 2
-- If $s$ has no unique combinations up to size $W$, we say it has infinite width.
+- If $s$ has no unique combinations up to size $W$, we say it has infinite width (which we can write as just W+1, since we ignore states wider than $W$).
 - If the width of $s$ is greater than $W$, we do not add it to the open queue.
 
-Provided is a function that will turn a state dictionary into a set of
-propositions (assuming you’ve done the work so far):
+Provided is a snippet that will check whether a state satisfies an iterable containing propositions (for example, a set representing a combination of propositions).
+It will be useful in determining whether a state is novel.
 
 #+BEGIN_SRC python
-def propositionalize(state):
-  propositionalized_state = set()
-  for item,count in propositions:
-    # TODO me, check index vs item
-    if state[item] >= count:
-      propositionalized_state.add((item,count))
-  return propositionalized_state
+# Example
+satisfied = True
+for item,count in propositions:
+  if state[item] < count:
+    satisfied = False
 #+END_SRC
 
-You could test it like so:
+Now you are equipped to implement iterative widening search.
+For each instance of the search, you will want to keep track of all the witnessed combinations of propositions; if you can put an order on combinations (for example, the order in which they are generated) then you can use an array to represent this set.
+In this seen state array, each value tells whether the combination corresponding to its index has been seen before.
+To update this array, you will implement a function =see_state(s:State, combinations:List[Set[Proposition]], seen_combinations:array.array) -> bool= which will take in a state, a list of combinations (sets of Propositions), and the seen array and output whether any new combinations were witnessed in this state.
+Note that one state might lead to the discovery of several new combinations.
+
+The outer loop of iterative widening gradually increases the bound $W$ up to a given $WMax$.
+The inner loop has the same skeleton as a standard graph search, with the exception that non-novel states are immediately thrown away.
+For now, implement iterative widening's inner loop using breadth-first search.
+
+Your search should return the sequence of actions required to reach a goal condition from an initial condition, along with the cost of that plan.
+You also may want to print output describing how many nodes are visited and how much time has been taken for each value of $W$.
 
 #+BEGIN_SRC python
-my_state = {'wood': 0, 'plank': 2, 'stick': 4, 'bench': 1}
-print(propositionalize(my_state))
+def see_state(state:State, combinations:List[Set[Proposition]], seen_combinations:array.array) -> bool:
+    any_new = False
+    for index,combo in enumerate(all_combinations):
+        if False: # A. Check whether this combination occurs in seen_combinations
+            continue
+        combination_occurs = False
+        # B. Does this novel combination occur in this state?
+        if not combination_occurs:
+            # C. If it does not, what do you do then?
+            pass
+    return any_new
+
+def width_search(initial:State, goal:State, WMax:int) -> Optional[int, State, List[string]]:
+    all_propositions = recipe_propositions | state_propositions(initial) | state_propositions(goal)
+    all_combinations = []
+    # Increase W up to WMax
+    for W in range(1,WMax):
+        # Calculate all combinations of propositions up to size W
+        all_combinations += [set(props) for props in itertools.combinations(all_propositions, W)]
+        # Track, for each combination (by index), whether we have seen this combination before (0 for no, >0 for yes)
+        seen_combinations = array.array('B', [0 for combo in all_combinations])
+        # Initialize seen_combinations
+        see_state(initial, all_combinations, seen_combinations))
+        open_list = [(0, initial, [])]
+        # D. Any other setup you may need for the search
+        while open_list:
+            # E. This should look like your graph search, except...
+            # Call see_state on newly expanded states to update seen_combinations and use its return value to decide whether to add the next n
+            pass
+    return None
+
 #+END_SRC
 
+Try it out like so:
 
-
-*************** TODO which file?
 #+BEGIN_SRC python
-import itertools
-proposition_names = set([prop[0] for prop in propositions])
+# Example
+# Try harder ones once you have these down
 
-proposition_combos = [ set([prop]) for prop in proposition_names]
-MAX_COMBO  = 3
-for ii in range(2,MAX_COMBO+1):
-proposition_combos += [ set(prop) for prop in itertools.combinations(proposition_names, ii)]
+print(width_search({},{'bench':1},4))
+#print(width_search({'wood':1},{'iron_pickaxe':1},4))
+#print(width_search({},{cart:1},4))
 #+END_SRC
 
-** TODO finish the rest of this
-Now it is time for the width_search.
+16. What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit and how long does it take exactly?
+17. How does increasing or decreasing the value of $WMax$ change the time to find a solution, or: what sorts of craft planning situations benefit from increasing $WMax$? 
+18. Is iterative widening guaranteed to give optimal solutions for this problem?  In other words, does there exist a crafting problem where a width bound of $w$ gives a suboptimal solution while $w+1$ gives a better one?
+19. Can you think of a way to apply iterative widening to the path planning problem?  Do you think it would perform better than A* there or worse?  Why?
 
-For each instance of the search, you will want to keep track of a set
-of all of the seen proposition_combos.
-You will then add to this with a function
-
-``def calculate_width(state)``
-
-that will take in a state, search through all possible
-proposition_combos, and find whether a combination has been attempted
-before, and if it hasn’t add it to the set. After going through all
-combinations, calculate_width should return the minimum width found (and
-should return float(‘inf’) it can’t find a unique state)
-
-The IW search uses breadth-first search, with the key difference being
-that if the found width of a successor state is greater than MAX_COMBO
-(3 should suffic here) then that successor state is pruned
-
-Your search should return the sequence of actions required to get you
-from the initial state to the goal condition
-
-.. code:: ipython3
-
-def width_search(initial_state,is_goal):
-  def calculate_width(state):
-    min_width =  float('inf')
-    return  min_width
-
-return []
-
-# Try the harder ones once you have ths down
-
-print(width_search({},lambda state: state.get('bench',0) > 0))
-#print(width_search({},lambda state: state.get('iron_pickaxe',0) > 0))
-#print(width_search({},lambda state: state.get('cart',0) > 0))
-
+Submit your Python files and reflections, and take a well-deserved rest!
