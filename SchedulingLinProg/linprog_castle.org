@@ -41,7 +41,8 @@ This is a perfect job for /linear programming./
 
 Recall that in a linear program, we define /decision variables/ which are to be determined by the solver, /constraints/ which may not be violated, and an /optimality criterion/ which we want to minimize or maximize.
 
-Take a moment to reflect on and write out answers to these questions (in a file like =linprog_castle_1.txt=) before moving on---it will make the programming portion much easier:
+Take a moment to reflect on and write out answers to these questions (in a file like =linprog_castle_1.txt=) before moving on---it will make the programming portion much easier.
+These reflections will also be graded, so doing them is strongly recommended!
 
 1. What are the decision variables in this problem?
 2. Assuming that we are starting at 10:00, and using the constants $W$ and $T$ from the introduction, what are the constraints on feasible solutions?  Use a formal notation, i.e. a list of mathematical inequalities.  Remember that we need to enforce that no one works more time than they are allowed to work and that the castle is finished by the end of the schedule.
@@ -50,6 +51,9 @@ Take a moment to reflect on and write out answers to these questions (in a file 
 Now that we have formulated our problem, we can translate it into Python code; create a new file =linprog_castle_1.py= and follow along (it's better if you don't copy and paste, but type things out and read as you go).
 First we import our solver API, [[https://pythonhosted.org/PuLP/index.html][=PuLP=]], and begin defining a function.
 Leave the name and arguments of this function exactly as written here. 
+The automatic tests for this module are in =test_linprog_castle.py=.
+You can run them with =python test_linprog_castle.py=.
+Feel free to modify this file as you like to add tests, try out new examples, and so on.
 
 #+BEGIN_SRC python
 import pulp
@@ -65,6 +69,7 @@ Now we can set up the problem:
 And start defining our decision variables.
 =PuLP= uses the =LpVariable= constructor for decision variables, which you can call like so:
 #+BEGIN_SRC python
+# Example
 v1 = pulp.LpVariable("v1", lower_bound, upper_bound)
 #+END_SRC
 
@@ -72,12 +77,14 @@ Note that =lower_bound= and =upper_bound= are optional, and that every decision 
 Add declarations of decision variables to the function you're defining, then continue by adding your constraints.
 Constraints in =PuLP= are added onto a particular problem:
 #+BEGIN_SRC python
+# Example
 problem += v1 - v2 >= 0
 problem += v1 + v2 < 100
 #+END_SRC
 
 And you can set an optimization criterion by adding some expression which is /not/ an inequality:
 #+BEGIN_SRC python
+# Example
 problem += v2 # optimize v2
 # OR:
 problem += v1 + v3 # optimize sum of v1 and v3
@@ -96,6 +103,7 @@ Finish your definition of =solve_castle_1=; after giving all the constraints and
 Finally, call your function at the end of the file; for example, assuming placing one block takes 5 seconds and we have 7,256 blocks to place:
 
 #+BEGIN_SRC python
+# Example
 solve_castle_1(5, 7256)
 #+END_SRC
 
@@ -148,13 +156,17 @@ There are two nice programming tricks that can help with this problem.
 The first is creating lists of =LpVariables=---and perhaps parallel lists of coefficients---and the second is the use of =lpSum= to add them up (=lpSum= is not necessary to solve this problem but it can help a little bit).
 
 #+BEGIN_SRC python
+# Example
 names = ["q", "r", "s", "t"]
 variables = [pulp.LpVariable("v_"+varname,0) for varname in names]
 # Allocate 50 units among q, r, s, t
 problem += pulp.lpSum(variables) <= 50
 #+END_SRC
 
-Just like before, we'll create a new file =linprog_castle_2.py=:
+Just like before, we'll create a new file =linprog_castle_2.py=.
+The automatic tests for this module are in =test_linprog_castle_2.py=.
+You can run them with =python test_linprog_castle_2.py=.
+Feel free to modify this file as you like to add tests, try out new examples, and so on.
 
 #+BEGIN_SRC python
 import pulp
@@ -171,16 +183,22 @@ def solve_castle_2(Xcobble,Ypanes,Zplanks):
     print("Total duration:", problem.objective.value())
     for v in sorted(list(problem.variables()),key=lambda v:v.name):
         print(v.name, "=", v.varValue)
+#+END_SRC
 
+Again, to test it out:
+
+#+BEGIN_SRC python
+# Example
 solve_castle_2(4000,256,3000)
 #+END_SRC
 
 Surprisingly, this can be completed in a little under seventeen minutes; this shows how unrealistic the assumption of ignoring travel time can be!
 In future assignments, these assumptions will be tightened up.
 
-For now, play around with the parameters and see how the division of labor changes.
-Briefly describe three qualitatively different situations around the allocation of workers to tasks.
+5. Briefly describe three qualitatively different situations around the allocation of workers to tasks according to your encoding.
+  1. 
+  2. 
+  3. 
+6. If you wanted to model travel times with resources in different locations, how would you need to modify your encoding? 
 
-1. 
-2. 
-3. 
+Submit your python files and text files and proceed to =intprog_planning=.

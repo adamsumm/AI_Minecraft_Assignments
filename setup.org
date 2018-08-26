@@ -16,9 +16,9 @@ conda config --add channels conda-forge
 conda install -c crowdai malmo
 #+END_SRC
 
-Next we'll throw in the z3-solver package, which has no Conda recipe:
+Next we'll throw in the z3-solver package, which has no Conda recipe, along with some Python helpers used by various development tools:
 #+BEGIN_SRC bash :session
-pip install z3-solver
+pip install z3-solver flake8 mypy jedi autopep8 yapf black pylint
 #+END_SRC
 
 In the exercises which use Malmo, you'll need two terminal windows.  In one, launch Minecraft:

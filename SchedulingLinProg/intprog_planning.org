@@ -13,7 +13,7 @@
 #+CREATOR: Emacs 26.1 (Org mode 9.1.13)
 
 This assignment is the second part of the linear programming problem sequence.
-The first part is "Building a Castle with Linear Programming" and should be seen as a prerequisite to this.
+The first part is "Building a Castle with Linear Programming," which is a prerequisite for this section.
 
 Integer linear programming is different in an important way from linear programming over the reals: it is NP-complete.
 This means that it is more expressive, but it is also much more computationally difficult.
@@ -45,7 +45,10 @@ As before, let's do a reflection in =intprog_crafting.txt=.
 6. What about for $T=2$?  How much of the problem structure is the similar for each time step?
   - One trick that may come in handy is /time-indexing/ your decision variables, e.g. =stone_pickaxe_0=, =stone_pickaxe_1=, =stone_pickaxe_2=, ...).
 
-Now let's open up =intprog_crafting.py=:
+Now let's open up =intprog_crafting.py=.
+The automatic tests for this module will be in =test_intprog_crafting.py=.
+You can run them with =python test_intprog_crafting.py=.
+Feel free to modify this file as you like to add tests, try out new examples, and so on.
 
 #+BEGIN_SRC python
 import pulp
@@ -68,6 +71,7 @@ recipes = [(n.replace(" ","_"),
 
 One trick that will be helpful here is adding a whole batch of constraints to the problem at once, for example:
 #+BEGIN_SRC python
+# Example
 for c in [v[0]*const >= v[1]+v[2] for (v0,const,v1,v2) in vlist]:
     problem += c
 #+END_SRC
@@ -116,8 +120,9 @@ def solve_intprog(initial, goal, T):
         return math.inf,None
 #+END_SRC
 
-And call it with increasing $T$:
+And to call it with increasing $T$:
 #+BEGIN_SRC python
+# Example
 initial = {}
 goal = {"stone_pickaxe":1}
 if solve_intprog(initial,goal,10)[0] == math.inf:
@@ -126,20 +131,20 @@ if solve_intprog(initial,goal,10)[0] == math.inf:
             assert(False,"Not solvable in 30 steps")
 #+END_SRC
 
-Well, this is disappointing.
 Compare the output with your iterative widening planner from before.
 For this simple problem it's definitely not fast, and we don't have a guarantee of optimality nor an upper limit on how big $T$ should get before we give up!  
 In fact, if you try to craft even a cart you need a very high value for $T$, which blows up execution time quickly.
 Interestingly, the solver can often determine quickly whether a crafting job is flat-out impossible within a given $T$, but finding the plan if one exists can be very expensive.
 
 7. Try out different combinations of initial and goal states to get a sense for where the hard edge of intractability lies.  Write out three surprising findings.
+8. What's the largest crafting problem you can think of that your algorithm can solve within 20 seconds?
 
 We have an algorithm here which works for fixed $T$, but it is not optimal and it is not complete, i.e. it is not guaranteed to find a solution if one exists.
 Ignoring the practical problems for now, let's reflect on three final questions:
 
-8. How could we make this algorithm complete, without changing the definition of =solve_intprog=?
-9. How could we make this algorithm optimal, i.e. how could we determine whether we have found the best possible solution given what we know about $T$ and the duration of the best solution found so far?  Recall that every crafting operation takes at least 1 second.
-10. How could we change this algorithm to ensure that it always terminates even if a solution does not exist for any value of $T$?  Can you determine an upper bound on that termination time?
+9. How could we make this algorithm complete, without changing the definition of =solve_intprog=?
+10. How could we make this algorithm optimal, i.e. how could we determine whether we have found the best possible solution given what we know about $T$ and the duration of the best solution found so far?  Recall that every crafting operation takes at least 1 second.
+11. How could we change this algorithm to ensure that it always terminates even if a solution does not exist for any value of $T$?  Can you determine an upper bound on that termination time?
 
 * Second try: A compact encoding
 
@@ -172,7 +177,10 @@ For this it might help to put an upper bound on how many times any individual re
 
 6. In a formal notation, what will the constraints on =Requires= terms for recipes look like now?
 
-Let's give it a try in =intprog_crafting_compact.py=: 
+Let's give it a try in =intprog_crafting_compact.py=.
+The automatic tests for this module are in =test_intprog_crafting_compact.py=.
+You can run them with =python test_intprog_crafting_compact.py=.
+Feel free to modify this file as you like to add tests, try out new examples, and so on.
 
 #+BEGIN_SRC python
 import pulp
@@ -226,18 +234,27 @@ And again, we can call it with increasing $T$:
 initial = {}
 goal = {"stone_pickaxe":1}
 if solve_intprog_compact(initial,goal,5)[0] == math.inf:
-    if solve_intprog(initial,goal,10)[0] == math.inf:
-        if solve_intprog(initial,goal,20)[0] == math.inf:
+    if solve_intprog_compact(initial,goal,10)[0] == math.inf:
+        if solve_intprog_compact(initial,goal,20)[0] == math.inf:
             assert(False,"Not solvable in 20 steps with parallel execution")
+
+initial = {}
+goal = {"stone_pickaxe":100}
+if solve_intprog_compact(initial,goal,5)[0] == math.inf:
+    if solve_intprog_compact(initial,goal,10)[0] == math.inf:
+        if solve_intprog_compact(initial,goal,20)[0] == math.inf:
+            assert(False,"Not solvable in 20 steps with parallel execution")
+
 #+END_SRC
 
 The performance characteristics of this approach are radically different.
 Take some time to compare against your initial ILP implementation and against the iterative widening algorithm from before; then reflect on the following questions.
 
 7. Try this algorithm with different combinations of initial and goal states.  How does performance vary with the number of distinct items, the number of items total, and the length of the dependency chain involved in creating the items?
-8. What is the exact meaning of "an optimal solution" for a given execution of this planning algorithm, and how does this definition relate to the total duration of the plan and the number of steps $T$?  Is there anything surprising about the plans that come out?
-9. In plain language (but in some detail), how would you change this encoding to handle multiple (say, integer $K$) agents acting in parallel, such that every recipe executed at a given timestep must be executed by exactly one agent and that enough of the =Requires= (furnaces, tools, etc) are available for each agent to do the work?  What might the decision variables, constraints, and optimality criterion be? 
-10. Are there Minecraft planning problems for which it's better to use the iterative widening planner versus the ILP planner?
-11. Can you name two different planning domains outside of Minecraft, one where iterative widening should do better and one where ILP should do better?
+8. What's the largest crafting problem you can think of that your algorithm can solve within 20 seconds?
+9. What is the exact meaning of "an optimal solution" for a given execution of this planning algorithm, and how does this definition relate to the total duration of the plan and the number of steps $T$?  Is there anything surprising about the plans that come out?
+10. In plain language (but in some detail), how would you change this encoding to handle multiple (say, integer $K$) agents acting in parallel, such that every recipe executed at a given timestep must be executed by exactly one agent and that enough of the =Requires= (furnaces, tools, etc) are available for each agent to do the work?  What might the decision variables, constraints, and optimality criterion be? 
+11. Are there Minecraft planning problems for which it's better to use the iterative widening planner versus the ILP planner?
+12. Can you name two different planning domains outside of Minecraft, one where iterative widening should do better and one where ILP should do better?
 
 Submit your Python files and reflections, then take a well-deserved rest!
