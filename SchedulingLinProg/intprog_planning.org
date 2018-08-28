@@ -1,0 +1,260 @@
+#+OPTIONS: ':t *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:nil broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
+#+TITLE: Integer Programming for Production Planning
+#+DATE: <2018-08-21 Tue>
+#+AUTHOR: Joseph C. Osborn
+#+EMAIL: joseph.osborn@pomona.edu
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 26.1 (Org mode 9.1.13)
+
+This assignment is the second part of the linear programming problem sequence.
+The first part is "Building a Castle with Linear Programming," which is a prerequisite for this section.
+
+Integer linear programming is different in an important way from linear programming over the reals: it is NP-complete.
+This means that it is more expressive, but it is also much more computationally difficult.
+Classical planning is also largely concerned with NP-complete problems, so in this assignment we will take a quick look at how to phrase a particular planning problem as an integer programming problem.
+In general, this reduction goes through Boolean satisfiability (SAT); we will examine a SAT translation of Minecraft planning in a later assignment, but for now we will focus on a direct translation to ILP.
+
+Just like in the crafting planning assignment, our problem here is to go from a known initial state to a goal state satisfying some predicate.
+We will use the same JSON file with its subset of the Minecraft recipes.
+
+Also, because we are comparing against an existing implementation, we will do a bit of casual benchmarking---just to measure our new algorithm's time (and check correctness) versus the old one.
+If you had trouble getting the planning assignment working, don't worry: this part does not depend on any of that code. 
+
+* One crafting operation per time step
+
+The purpose of a crafting planner is to help schedule crafting operations such that every operation is valid (i.e. does not depend on items which are not in the inventory) and that the overall time cost of the crafting plan is minimized.
+Thinking of linear programming, the latter condition---the sum of the cost of each step---is naturally our optimality criterion.
+But how do we formulate the notion of a sequence of crafting steps when we don't know in advance how long the sequence is?
+The answer is that we /don't./
+Instead, we fix a length $T$ of the sequence and find out whether any feasible plans of length $T$ exist.
+If no plan exists of length $T$, then we could increase $T$ and try again.
+
+As before, let's do a reflection in =intprog_crafting.txt=. 
+
+1. How is this reminiscent of Iterative Widening?
+2. If an integer linear programming solver finds a plan of length $T$, is it necessarily optimal with respect to other plans of length $T$?  Is it necessarily optimal with respect to plans of length $T-1$?  Of length $T+1$?
+3. Assuming a set of constants describing the initial inventory (say, ={"wood":5}=) and a set of constants describing the goal inventory (say, ={"stone_pickaxe":1}=), what would an integer program encoding the planning problem for $T=0$ look like in terms of its decision variables, constraints, and optimality criterion?  What are the lower bounds on variables?  Is this program feasible?
+4. In plain language, how would the above program need to change for $T=1$, i.e. after one crafting step?  How could we encode, in an integer linear program (i.e. in terms of multiplications), the idea that we may choose to apply or not apply a particular recipe and its effects (producing or consuming items) may or may not occur?
+5. In formal notation, how does the state after one crafting step depend on the initial state and the recipes in =crafting.json=?  What are the decision variables, constraints, and optimality criterion?
+6. What about for $T=2$?  How much of the problem structure is the similar for each time step?
+  - One trick that may come in handy is /time-indexing/ your decision variables, e.g. =stone_pickaxe_0=, =stone_pickaxe_1=, =stone_pickaxe_2=, ...).
+
+Now let's open up =intprog_crafting.py=.
+The automatic tests for this module will be in =test_intprog_crafting.py=.
+You can run them with =python test_intprog_crafting.py=.
+Feel free to modify this file as you like to add tests, try out new examples, and so on.
+
+#+BEGIN_SRC python
+import pulp
+import json
+import time
+import math
+
+with open('Crafting.json') as f:
+    Crafting = json.load(f)
+
+items = Crafting['Items']
+# Normalize the format of recipes a little bit to avoid None entries.
+# We also remove spaces from recipe names to avoid quirks in PuLP's solvers.
+recipes = [(n.replace(" ","_"),
+  {'Produces':r.get('Produces',{}),
+   'Consumes':r.get('Consumes',{}),
+   'Requires':r.get('Requires',{}),
+   'Time':r.get('Time')}) for n, r in Crafting['Recipes'].items()]
+#+END_SRC
+
+One trick that will be helpful here is adding a whole batch of constraints to the problem at once, for example:
+#+BEGIN_SRC python
+# Example
+for c in [v[0]*const >= v[1]+v[2] for (v0,const,v1,v2) in vlist]:
+    problem += c
+#+END_SRC
+
+We'll define a function for solving the problem with a fixed $T$ and a given initial and goal state, ignoring what's defined in =crafting.json=:
+
+#+BEGIN_SRC python
+def solve_intprog(initial, goal, T):
+    start_time = time.time()
+    problem = pulp.LpProblem("Crafting ILP",pulp.LpMinimize)
+    # Make constant-valued LpVariables from initial; also throw time in with other state variables.
+    # There's no specific need to make these LpVariables, but it simplifies things to know that the type of initial_state_vars, the type of last_state_vars, and the type of state_vars are all the same.
+    # Note that passing "cat='Integer'" to LpVariable makes the variable integral instead of real.
+    initial_state_vars = {item:pulp.LpVariable(item+"_0", initial.get(item,0), initial.get(item,0),cat='Integer') for s in items+['time']}
+    last_state_vars = initial_state_vars
+    for t in range(1, T+1):
+        state_vars = {...} # A. make state variables for this time slot
+        # You can make 0/1 boolean variables in this way:
+        pick_vars = {n:pulp.LpVariable(n+"_pick_"+str(t),0,1,cat='Binary') for n,_r in recipes}
+        # B. Add constraint ensuring only one recipe is picked
+        # C. Add any other bookkeeping you need here too
+        for name, rule in recipes:
+            pick = pick_vars[name]
+            # D. Add constraints ensuring this recipe is valid and that its effects will hold.
+            # Note that effects on an item's count in inventory can involve multiple recipes, 
+            # so you may need to collect effects somehow and then add a constraint after looking at all recipes.
+        last_state_vars = state_vars          
+    # E. Add goal constraints at T
+    # F. Add optimality criterion at T
+    problem.solve()
+    if problem.status > 0:
+        now = time.time()
+        print(T,"Feasible solution after ",now-start_time)
+        sol_t = prob.objective.value()
+        print("Duration:",sol_t)
+        model = {v.name:v.varValue for v in prob.variables()}
+        for t in range(1,T+1):
+            for n,r in recipes:
+                val = model[n+"_pick_"+str(t)]
+                if val != 0:
+                    print(t,n,val)
+            print("  t:",model["time_"+str(t)])
+        return sol_t,model
+    else:
+        print("No solution up to",T,"steps")
+        return math.inf,None
+#+END_SRC
+
+And to call it with increasing $T$:
+#+BEGIN_SRC python
+# Example
+initial = {}
+goal = {"stone_pickaxe":1}
+if solve_intprog(initial,goal,10)[0] == math.inf:
+    if solve_intprog(initial,goal,15)[0] == math.inf:
+        if solve_intprog(initial,goal,30)[0] == math.inf:
+            assert(False,"Not solvable in 30 steps")
+#+END_SRC
+
+Compare the output with your iterative widening planner from before.
+For this simple problem it's definitely not fast, and we don't have a guarantee of optimality nor an upper limit on how big $T$ should get before we give up!  
+In fact, if you try to craft even a cart you need a very high value for $T$, which blows up execution time quickly.
+Interestingly, the solver can often determine quickly whether a crafting job is flat-out impossible within a given $T$, but finding the plan if one exists can be very expensive.
+
+7. Try out different combinations of initial and goal states to get a sense for where the hard edge of intractability lies.  Write out three surprising findings.
+8. What's the largest crafting problem you can think of that your algorithm can solve within 20 seconds?
+
+We have an algorithm here which works for fixed $T$, but it is not optimal and it is not complete, i.e. it is not guaranteed to find a solution if one exists.
+Ignoring the practical problems for now, let's reflect on three final questions:
+
+9. How could we make this algorithm complete, without changing the definition of =solve_intprog=?
+10. How could we make this algorithm optimal, i.e. how could we determine whether we have found the best possible solution given what we know about $T$ and the duration of the best solution found so far?  Recall that every crafting operation takes at least 1 second.
+11. How could we change this algorithm to ensure that it always terminates even if a solution does not exist for any value of $T$?  Can you determine an upper bound on that termination time?
+
+* Second try: A compact encoding
+
+In fact, it's not a huge surprise that ILP does worse than a dedicated planning algorithm (recall that A*, a graph search algorithm, also did worse than iterated widening). 
+It is a kind of "common knowledge" (although this can certainly be disrupted!) that ILP is worse than modern planners (mainly based on SAT, which we will visit later) for classical planning problems.
+But let's not give up on ILP yet---because while we can frame this as a classical planning problem, this is really a problem about numbers and flows.
+Here, ILP has an important advantage over width- or SAT-based planning, which is that ILP is primarily concerned with numbers and flows!
+
+We saw that for problems where $T$ stayed small, the solver worked great.
+Unfortunately our /encoding/ needed to increase $T$ for every additional crafting step.
+Take a moment to reflect in =intprog_crafting_compact.txt=.
+Modeling this problem gets quite subtle so its important to think about the space of possible encodings (and Python programs generating those encodings) before moving forward---doing these reflections first is strongly recommended and will make the assignment much easier.
+
+1. Since ILP problems need /compact/ encodings to be efficiently solvable, and each timestep adds a bunch more repetitive variables and constraints (and tricky chained time-dependencies), what can we do to reduce the number of timesteps we need?
+
+When we play Minecraft, we rarely hop back and forth between gathering and crafting tasks, so one approach might be to model that by applying the /same/ recipe multiple times in one tick.
+Another could have us applying multiple different recipes concurrently, provided they do not conflict on their required inputs.
+
+2. How do we need to change our decision variables to account for these improvements?
+
+The most straightforward way is to change the zero/one binary pick variables to arbitrary integer variables greater than zero, and to eliminate the restriction that the sum of pick variables is one.
+
+3. If we made this alteration, how would the constraints relating the current inventory to the previous inventory need to change?
+4. How about the constraints around =Consumes=?
+5. And, in plain language, how would the constraints on =Requires= need to change?
+
+The key issue for our =Requires= constraints is that just multiplying by pick will mean we need e.g. ten furnaces to smelt ten ingots in a row.
+It seems like we need a way to "cast" the integer describing how many times we execute a given recipe into a boolean zero or one, or at least to bring the range of some expression involving the pick variable between zero and one.
+For this it might help to put an upper bound on how many times any individual recipe can be executed within a single instant.
+
+6. In a formal notation, what will the constraints on =Requires= terms for recipes look like now?
+
+Let's give it a try in =intprog_crafting_compact.py=.
+The automatic tests for this module are in =test_intprog_crafting_compact.py=.
+You can run them with =python test_intprog_crafting_compact.py=.
+Feel free to modify this file as you like to add tests, try out new examples, and so on.
+
+#+BEGIN_SRC python
+import pulp
+import json
+import time
+import math
+
+def solve_intprog_compact(initial, goal, T):
+    start_time = time.time()
+    problem = pulp.LpProblem("Crafting ILP",pulp.LpMinimize)
+    # Make constant-valued LpVariables from initial; also throw time in with other state variables.
+    # There's no specific need to make these LpVariables, but it simplifies things to know that the type of initial_state_vars, the type of last_state_vars, and the type of state_vars are all the same.
+    # Note that passing "cat='Integer'" to LpVariable makes the variable integral instead of real.
+    initial_state_vars = {item:pulp.LpVariable(item+"_0", initial.get(item,0), initial.get(item,0),cat='Integer') for s in items+['time']}
+    last_state_vars = initial_state_vars
+    for t in range(1, T+1):
+        state_vars = {...} # A. make state variables for this time slot
+        # B. Define your own pick variables here.  You may want to give them a (very high) upper bound---that could be useful in formulating constraints!
+        pick_vars = {n:pulp.LpVariable(n+"_pick_"+str(t),0,upper,cat='Integer') for n,_r in recipes}
+        # C. Add any other bookkeeping you need here too
+        for name, rule in recipes:
+            pick = pick_vars[name]
+            # D. Add constraints ensuring this recipe is valid and that its effects will hold.
+            # Note that effects on an item's count in inventory can involve multiple recipes, 
+            # so you may need to collect effects somehow and then add a constraint after looking at all recipes.
+            # Also remember to handle =Produces= and =Requires= correctly in the multiple-execution, multiple-recipe case!  Keep in mind that each recipe can also be seen as "producing" time.
+        last_state_vars = state_vars
+    # E. Add goal constraints at T
+    # F. Add optimality criterion at T
+    problem.solve()
+    if problem.status > 0:
+        now = time.time()
+        print(T,"Feasible solution after ",now-start_time)
+        sol_t = prob.objective.value()
+        print("Duration:",sol_t)
+        model = {v.name:v.varValue for v in prob.variables()}
+        for t in range(1,T+1):
+            for n,r in recipes:
+                val = model[n+"_pick_"+str(t)]
+                if val != 0:
+                    print(t,n,val)
+            print("  t:",model["time_"+str(t)])
+        return sol_t,model
+    else:
+        print("No solution up to",T,"steps")
+        return math.inf,None
+#+END_SRC
+
+And again, we can call it with increasing $T$:
+#+BEGIN_SRC python
+initial = {}
+goal = {"stone_pickaxe":1}
+if solve_intprog_compact(initial,goal,5)[0] == math.inf:
+    if solve_intprog_compact(initial,goal,10)[0] == math.inf:
+        if solve_intprog_compact(initial,goal,20)[0] == math.inf:
+            assert(False,"Not solvable in 20 steps with parallel execution")
+
+initial = {}
+goal = {"stone_pickaxe":100}
+if solve_intprog_compact(initial,goal,5)[0] == math.inf:
+    if solve_intprog_compact(initial,goal,10)[0] == math.inf:
+        if solve_intprog_compact(initial,goal,20)[0] == math.inf:
+            assert(False,"Not solvable in 20 steps with parallel execution")
+
+#+END_SRC
+
+The performance characteristics of this approach are radically different.
+Take some time to compare against your initial ILP implementation and against the iterative widening algorithm from before; then reflect on the following questions.
+
+7. Try this algorithm with different combinations of initial and goal states.  How does performance vary with the number of distinct items, the number of items total, and the length of the dependency chain involved in creating the items?
+8. What's the largest crafting problem you can think of that your algorithm can solve within 20 seconds?
+9. What is the exact meaning of "an optimal solution" for a given execution of this planning algorithm, and how does this definition relate to the total duration of the plan and the number of steps $T$?  Is there anything surprising about the plans that come out?
+10. In plain language (but in some detail), how would you change this encoding to handle multiple (say, integer $K$) agents acting in parallel, such that every recipe executed at a given timestep must be executed by exactly one agent and that enough of the =Requires= (furnaces, tools, etc) are available for each agent to do the work?  What might the decision variables, constraints, and optimality criterion be? 
+11. Are there Minecraft planning problems for which it's better to use the iterative widening planner versus the ILP planner?
+12. Can you name two different planning domains outside of Minecraft, one where iterative widening should do better and one where ILP should do better?
+
+Submit your Python files and reflections, then take a well-deserved rest!

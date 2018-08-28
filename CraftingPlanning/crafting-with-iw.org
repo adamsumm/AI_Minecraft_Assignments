@@ -1,0 +1,370 @@
+#+OPTIONS: ':t *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:nil broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
+#+TITLE: Craft Planning with Iterative Widening
+#+DATE: <2018-08-23>
+#+AUTHOR: Joseph C. Osborn
+#+EMAIL: joseph.osborn@pomona.edu
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 26.1 (Org mode 9.1.13)
+
+This assignment is the second part of the planning problem sequence.
+The first part is "Path Planning Five Ways," which is a prerequisite for this section.
+
+In this assignment, you will be making a simple satisficing Minecraft crafting planner.
+Given an initial state, you will want to find a series of actions that gets you to a desired goal state. 
+You will first try your implementations of generic graph search (Dijkstra's algorithm and A*) to discover whether they are suitable for this task, and then implement a specialized planning algorithm called Iterative Widening.
+
+In this assignment you will:
+
+- Parse and process a data file into a format that is usable in your code
+- Create a representation of a state space such that you can check preconditions and apply effects in an efficient manner
+- Create a method to convert the intuitive predicate based state system into a propositional system
+- Implement width-search via Iterative Widening to efficiently find a plan that gets from an arbitrary state space to a desired state space
+- Compare width-search to optimal search methods such as Dijkstra’s algorithm and A*
+
+The goal of this assignment is for you to understand:
+
+- How to manipulate data (a boring, but /crucial/ skill)
+- How to navigate a state space that doesn’t map to standard geometry (i.e., domains outside of path planning)
+- How the pruning of a search space can result in a drastic reduction in the time spent performing the search
+
+Let's get to work in =crafting.py=.
+The automatic tests for this module are in =test_crafting.py=.
+You can run them with =python test_crafting.py=.
+Feel free to modify this file as you like to add tests, try out new examples, and so on.
+
+First we need to load =crafting.json=, a json file that has a subset of the Minecraft recipes in it (with some abstractions to account for travel time to different raw materials).  
+We'll also throw in some other imports we'll need later. 
+
+#+BEGIN_SRC python
+import json
+from typing import NamedTuple, Dict, Tuple, Optional, Sequence, List
+import array
+import heapq
+import math
+import time
+import itertools
+
+with open('Crafting.json') as f:
+    Crafting = json.load(f)
+#+END_SRC python
+
+You may want to try printing out some different information from =Crafting= to get a feel for its schema:
+
+#+BEGIN_SRC python
+# Example
+
+# List of items that can be in your inventory:
+print(Crafting['Items'])
+# example: ['bench', 'cart', ..., 'wood', 'wooden_axe', 'wooden_pickaxe']
+
+# List of items needed to be in your inventory at the end of the plan:
+# (okay to have more than this; some might be satisfied by initial inventory)
+print(Crafting['Goal'])
+# {'stone_pickaxe': 2}
+
+# Dict of crafting recipes (each is a dict):
+print(Crafting['Recipes']['craft stone_pickaxe at bench'])
+# { 'Produces': {'stone_pickaxe': 1},
+# 'Requires': {'bench': True},
+# 'Consumes': {'cobble': 3, 'stick': 2},
+# 'Time': 1
+# }
+#+END_SRC
+
+Let's reflect a little bit in =crafting.txt=.
+1. Do the recipe dictionaries in =crafting.json= all have the same set of keys?  Print out a few to find out, or read the JSON file.
+2. What is similar about the =Initial=, =Goal=, =Produces=, =Consumes=, and =Requires= schema?  What is different about them?
+3. Thinking back to your data structures class, what operations are involved in looking up a key in a dictionary data structure, and how does that compare to obtaining values from an array?
+4. Look this up if you need to: What is the difference between a Python =List= of integers and a Python =array.array= of integers?
+
+Let's proceed by using the same data representation for an inventory state (as in =Initial=), a partial inventory state (as in =Goal=, =Produces=, and =Consumes=), and the inventory query posed by =Requires=.
+Because the speed of the inner loop is of supreme importance in graph search, we'll want to use an =array= of unsigned integers data representation for each of these.
+In order to go back and forth between item names and item indices, let's define a couple of global variables:
+
+#+BEGIN_SRC python
+items_by_index: List[str] = Crafting['Items']
+items_to_indices: Dict[str, int] = {
+    item: index for index, item in enumerate(items_by_index)
+}
+#+END_SRC
+
+We'll wrap our array-of-items data structure in a convenience class called =State=.
+Because we'll need to put =State=s into closed sets, priority queues, and so on, we'll need them to be hashable, equatable, and comparable.
+We also will need to be adding and subtracting inventory states from each other later on, so we'll put that in there too.
+A skeleton of this class is provided below, with some of the data handling code given.
+
+#+BEGIN_SRC python
+class State:
+    items: array.array
+
+    def __init__(self, items: Optional[Sequence[int]] = None) -> None:
+        if items is not None:
+            # Copying a state from an old state.
+            # This call to the array constructor creates an array of unsigned integers and initializes it from the contents of items.
+            self.items = array.array('I', items)
+        else:
+            self.items = array.array('I', [0 for item in items_by_index])
+
+    def __add__(self, other:'State') -> 'State':
+        s = State(self.items)
+        # A. How do we add together the contents of two states?
+        return s
+
+    def __sub__(self, other:'State') -> 'State':
+        s = State(self.items)
+        # B. How do we subtract one state from another?
+        return s
+
+    def __ge__(self, other: 'State') -> bool:
+        # C. How do we know whether one state (self) contains everything that's inside of another (other)? 
+        pass
+
+    def __lt__(self, other: 'State') -> bool:
+        return not (self >= other)
+
+    def __eq__(self, other) -> bool:
+        return self.items == other.items
+
+    def __hash__(self) -> int:
+        hsh = 5381
+        for s in self.items:
+            hsh = ((hsh << 5) + hsh) + s
+        return hsh
+
+    def __str__(self) -> str:
+        return self.to_dict().__str__()
+
+    def to_dict(self) -> Dict[str, int]:
+        return {items_by_index[idx]: self.items[idx]
+                for idx in range(len(self.items))}
+
+    @classmethod
+    def from_dict(cls, item_dict: Dict[str, int]) -> 'State':
+        return cls([
+            item_dict.get(item, 0) for item in items_by_index
+        ])
+#+END_SRC
+
+At this point we can already solve trivial problems:
+#+BEGIN_SRC python
+# Example
+initial = {'stone_pickaxe':1, 'ingot':2}
+goal = {'ingot':1}
+assert(initial >= goal)
+print("It worked!")
+#+END_SRC
+
+Now that we have our state representation, we can rephrase the recipes in terms of what they need from the state.
+Python has a useful datastructure---=namedtuple=---we can use for this purpose, so we'll have a =namedtuple= type called =Recipe=.  
+
+#+BEGIN_SRC python
+class Recipe(NamedTuple):
+    produces: State
+    consumes: State
+    requires: State
+    cost: int
+#+END_SRC
+
+It acts like a tuple in that its data are laid out contiguously in memory and it is immutable, but it has convenient accessors.
+Let's initialize a dictionary mapping names to recipes:
+
+#+BEGIN_SRC python
+recipes: Dict[str, Recipe] = {}
+for name, rule in Crafting['Recipes'].items():
+    recipes[name] = Recipe(
+        State.from_dict(rule.get('Produces', {})),
+        State.from_dict(rule.get('Consumes', {})),
+        State.from_dict({item: 1 if req else 0
+                         for item, req in rule.get('Requires', {}).items()}),
+        rule['Time']
+    )
+#+END_SRC
+
+Now we have our state representation and our action representation for the crafting domain.
+Let's reflect.
+
+5. What was the state representation in the path planning assignment?
+6. What was the action representation?
+7. How many possible actions are there in the whole domain, and how many of those are possible in a given state?
+
+In fact, we can consider any planning problem in terms of states and a transition relation between states and those actions which are valid in that state. 
+If we're thinking about path planning as search on the graph of possible locations (with edges given by a connectedness relation), task planning can be seen as search on the graph of possible states (with edges given by the state transition relation).
+
+Let's try it.
+
+** Planning via Graph Search
+
+8. Consider your implementation of Dijkstra's algorithm.  What would need to change so it works on states-and-actions instead of locations-and-directions?
+
+#+BEGIN_SRC python
+def plan_dijkstra(initial: State, goal: State) -> Optional[Tuple[int, State, List[str]]]:
+    start_time = time.time()
+    # D. Implement it here!  When you find a solution, print out the number of nodes visited and the time it took to get there.  If you don't find a solution, print out the number of nodes visited and the time it took to fail. 
+    # Return None or else a tuple of (cost, final_state, path) where path is a list of recipe names.
+    pass
+#+END_SRC
+
+To try it out:
+#+BEGIN_SRC python
+# Example
+print(plan_dijkstra(State.from_dict({}),
+                    State.from_dict({'stone_pickaxe':1})))
+print(plan_dijkstra(State.from_dict({'wood':1}),
+                    State.from_dict({'ingot':1})))
+#+END_SRC  
+
+9. Try to apply A* here.  What heuristic would you want to use?  Is that heuristic admissible?  Is that a problem?
+
+#+BEGIN_SRC python
+def plan_astar(initial: State, goal: State) -> Optional[Tuple[int, State, List[str]]]:
+    start_time = time.time()
+    # E. Implement it here!  When you find a solution, print out the number of nodes visited and the time it took to get there.  If you don't find a solution, print out the number of nodes visited and the time it took to fail. 
+    # Return None or else a tuple of (cost, final_state, path) where path is a list of recipe names.
+    pass
+#+END_SRC
+
+10. What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit and how long does it take exactly?  What heuristic ended up working best?
+
+** Planning with Iterative Widening
+
+Let's compare against a dedicated planning algorithm, rather than applying graph search naively.
+Planning domains have some significant differences from general graph search problems---let's reflect on what they might be.
+11. In graph search, what is the goal of a search?  How is that different from the goal of a planning problem?
+12. In graph search, what are the preconditions for traversing an edge?  How does this differ in a planning problem?
+13. In graph search, detecting cycles is relatively cheap.  Is that the case for planning problems?
+14. Is there more than one type of "cycle" in our crafting planning problem?
+
+Think about a recipe like making a stone pickaxe.
+Every possible planning state either satisfies its preconditions or doesn't.
+If this recipe were the only action, we could formulate the problem as a domain with just three /abstract/ states---one without a pickaxe and without the needed supplies, one without a pickaxe and with the needed supplies, and one with a pickaxe (and it doesn't matter what else is in the state).
+15. If we had a domain with just two recipes (/punch for wood/ and /wood planks/), what would be the abstract states in the sense uaed above?
+
+We can automate the intuition of (15) by transforming our states into /combinations of propositions./
+A /proposition/ here is a logical fact entailed by the state; for example "I have at least one piece of wood," "I have at least two pieces of wood," "I have at least one plank", and so on.
+Note that if we have two pieces of wood then we necessarily have one piece of wood as well!
+/Iterative widening/ is a planning algorithm which works by abstracting away differences between states and discarding states which are too similar to states which have been seen already in this iteration.
+Two states are similar if they share some number of propositions in common---so if the /width/ measure is one, then when we have seen one state where we have at least one stick we subsequently ignore every other state we might find later with one or more sticks (we'll relax this a little to say "any sufficiently different state is worth exploring"---so if it has at least a few propositions that are unique with respect to all seen combinations of a given width, we will consider it).
+To regain completeness---to always find a solution if one exists---the size of the combinations of items considered in this similarity computation is gradually increased until a solution is found.
+
+Returning to the problem of creating a stone pickaxe, any state which has a bench, three or more cobble, and two or more sticks is interchangeable.
+It also produces a propositions stating that we have a stone pickaxe.
+We need to know the full set of possibly interesting propositions in the world (for the purposes of applying recipes), so we want to accumulate both the propositions involved with making the recipe and its outputs.
+In order to know what all the combinations of propositions might be during planning, we need to all the individual propositions that might come up.
+
+#+BEGIN_SRC python
+class Proposition(NamedTuple):
+    item: int
+    at_least: int
+
+def recipe_propositions(recipe: Recipe) -> Set[Proposition]:
+    propositions: Set[Proposition] = set()
+    # Do something with recipe.consumes, recipe.produces, and recipe.requires.
+    # Emit, for this recipe, all the propositions entailed by the preconditions AND by the postconditions.
+    return propositions
+
+recipe_propositions = set()
+for r in recipes.values():
+    recipe_propositions |= recipe_to_propositions(r)
+#+END_SRC
+
+We also need to be able to convert initial and goal states into sets of propositions, so we'll have a function to do that once we start our search algorithm: 
+
+#+BEGIN_SRC python
+def state_propositions(state: State) -> Set[Proposition]:
+    propositions: Set[Proposition] = set()
+    # Do something for each item in state.
+    return propositions
+#+END_SRC
+
+We can capture the notion of "ignoring states that are not different enough" by using the idea of a closed set from the cycle prevention techniques in graph search.
+Instead of checking that the newly expanded state is present in a set of seen states, we can check whether it offers any predicate combinations of width up to $W$ we haven't already encountered at width bound $W$.
+Given the set of propositions that are important in our state, we want to create a list of all the propositions and combinations of up to $W$ propositions.
+When considering a newly expanded state $s$, we find all of the unique combinations of propositions that are true in $s$ and return the size of the smallest such combination; we compare this size against $W$ and give up if it is too high.
+
+For example:
+- If $s$ was the first state we've seen with =bench>=1= it would have width 1; we use the closed set to determine whether a given combination has been seen before.
+- If $s$ was the first state with =bench>=1= and =wooden_axe>=1= but no new atomic propositions, it would have width 2
+- If $s$ has no unique combinations up to size $W$, we say it has infinite width (which we can write as just W+1, since we ignore states wider than $W$).
+- If the width of $s$ is greater than $W$, we do not add it to the open queue.
+
+Provided is a snippet that will check whether a state satisfies an iterable containing propositions (for example, a set representing a combination of propositions).
+It will be useful in determining whether a state is novel.
+
+#+BEGIN_SRC python
+# Example
+satisfied = True
+for item,count in propositions:
+  if state[item] < count:
+    satisfied = False
+#+END_SRC
+
+Now you are equipped to implement iterative widening search.
+For each instance of the search, you will want to keep track of all the witnessed combinations of propositions; if you can put an order on combinations (for example, the order in which they are generated) then you can use an array to represent this set.
+In this seen state array, each value tells whether the combination corresponding to its index has been seen before.
+To update this array, you will implement a function =see_state(s:State, combinations:List[Set[Proposition]], seen_combinations:array.array) -> bool= which will take in a state, a list of combinations (sets of Propositions), and the seen array and output whether any new combinations were witnessed in this state.
+Note that one state might lead to the discovery of several new combinations.
+
+The outer loop of iterative widening gradually increases the bound $W$ up to a given $WMax$.
+The inner loop has the same skeleton as a standard graph search, with the exception that non-novel states are immediately thrown away.
+For now, implement iterative widening's inner loop using breadth-first search.
+
+Your search should return the sequence of actions required to reach a goal condition from an initial condition, along with the cost of that plan.
+You also may want to print output describing how many nodes are visited and how much time has been taken for each value of $W$.
+
+#+BEGIN_SRC python
+def see_state(state:State, combinations:List[Set[Proposition]], seen_combinations:array.array) -> bool:
+    any_new = False
+    for index,combo in enumerate(all_combinations):
+        if False: # A. Check whether this combination occurs in seen_combinations
+            continue
+        combination_occurs = False
+        # B. Does this novel combination occur in this state?
+        if not combination_occurs:
+            # C. If it does not, what do you do then?
+            pass
+    return any_new
+
+def width_search(initial:State, goal:State, WMax:int) -> Optional[int, State, List[string]]:
+    all_propositions = recipe_propositions | state_propositions(initial) | state_propositions(goal)
+    all_combinations = []
+    # Increase W up to WMax
+    for W in range(1,WMax):
+        # Calculate all combinations of propositions up to size W
+        all_combinations += [set(props) for props in itertools.combinations(all_propositions, W)]
+        # Track, for each combination (by index), whether we have seen this combination before (0 for no, >0 for yes)
+        seen_combinations = array.array('B', [0 for combo in all_combinations])
+        # Initialize seen_combinations
+        see_state(initial, all_combinations, seen_combinations))
+        open_list = [(0, initial, [])]
+        # D. Any other setup you may need for the search
+        while open_list:
+            # E. This should look like your graph search, except...
+            # Call see_state on newly expanded states to update seen_combinations and use its return value to decide whether to add the next n
+            pass
+    return None
+
+#+END_SRC
+
+Try it out like so:
+
+#+BEGIN_SRC python
+# Example
+# Try harder ones once you have these down
+
+print(width_search({},{'bench':1},4))
+#print(width_search({'wood':1},{'iron_pickaxe':1},4))
+#print(width_search({},{cart:1},4))
+#+END_SRC
+
+16. What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit and how long does it take exactly?
+17. How does increasing or decreasing the value of $WMax$ change the time to find a solution, or: what sorts of craft planning situations benefit from increasing $WMax$? 
+18. Is iterative widening guaranteed to give optimal solutions for this problem?  In other words, does there exist a crafting problem where a width bound of $w$ gives a suboptimal solution while $w+1$ gives a better one?
+19. Can you think of a way to apply iterative widening to the path planning problem?  Do you think it would perform better than A* there or worse?  Why?
+
+Submit your Python files and reflections, and take a well-deserved rest!

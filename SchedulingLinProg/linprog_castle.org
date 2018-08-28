@@ -1,0 +1,204 @@
+#+OPTIONS: ':t *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:nil broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
+#+TITLE: Building a Castle with Linear Programming
+#+DATE: <2018-08-21 Tue>
+#+AUTHOR: Joseph C. Osborn
+#+EMAIL: joseph.osborn@pomona.edu
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 26.1 (Org mode 9.1.13)
+
+This assignment is the first in a two-part linear programming sequence.
+
+You and two friends want to build a castle.
+You’ve laid out the plans and see you need $X$ cobble, $Y$ glass panes, and $Z$ wood planks (or $T$ blocks total). 
+You are in a forest near a beach so it will be easy to reach these materials and you have all the facilities you need to construct the end products (a furnace, etc).
+Unfortunately, you are in a limited-crafting world and don't have any recipes for tools, so you’re stuck with what you have on you:
+
+- You: A wood pickaxe and iron axe
+- Friend 1: A diamond pickaxe
+- Friend 2: A wood shovel and a wood axe
+
+Assuming it takes $W$ time on average to place a block in the right spot to build the castle according to plan, what is the best allocation of you and your friends’ time to gathering stone, gathering wood, gathering sand, crafting planks, crafting glass, and placing blocks?
+
+We'll solve this problem in two steps: crafting the final materials and placing the blocks in the world.  
+Also, as a simplification, we'll assume that we complete all of the gathering and crafting and then all of the block placing.
+Placing the blocks is a simpler problem than crafting the materials, so let's start there.
+
+* Constructing the Castle
+On the day you planned to actually build the castle, you and your friends have to log on and off at different times (perhaps it's a weekend or a holiday break and you have some other commitments).
+
+- You (friend A) have to log off between 12:00 and 1:00 for a lunch study session.
+- Friend B has to leave after 1:00 for class and then work-study.
+- Friend C has nothing scheduled today.
+
+We want to figure out a schedule where the castle gets completed, no one gets in trouble, and we finish the castle as quickly as possible.
+This is a perfect job for /linear programming./
+
+Recall that in a linear program, we define /decision variables/ which are to be determined by the solver, /constraints/ which may not be violated, and an /optimality criterion/ which we want to minimize or maximize.
+
+Take a moment to reflect on and write out answers to these questions (in a file like =linprog_castle_1.txt=) before moving on---it will make the programming portion much easier.
+These reflections will also be graded, so doing them is strongly recommended!
+
+1. What are the decision variables in this problem?
+2. Assuming that we are starting at 10:00, and using the constants $W$ and $T$ from the introduction, what are the constraints on feasible solutions?  Use a formal notation, i.e. a list of mathematical inequalities.  Remember that we need to enforce that no one works more time than they are allowed to work and that the castle is finished by the end of the schedule.
+3. In plain language, what are we trying to optimize?  Are we minimizing or maximizing this quantity?  This can get somewhat subtle, so be careful!
+
+Now that we have formulated our problem, we can translate it into Python code; create a new file =linprog_castle_1.py= and follow along (it's better if you don't copy and paste, but type things out and read as you go).
+First we import our solver API, [[https://pythonhosted.org/PuLP/index.html][=PuLP=]], and begin defining a function.
+Leave the name and arguments of this function exactly as written here. 
+The automatic tests for this module are in =test_linprog_castle.py=.
+You can run them with =python test_linprog_castle.py=.
+Feel free to modify this file as you like to add tests, try out new examples, and so on.
+
+#+BEGIN_SRC python
+import pulp
+
+def solve_castle_1(W,T):
+#+END_SRC
+
+Now we can set up the problem:
+#+BEGIN_SRC python
+    problem = pulp.LpProblem("Castle Construction",pulp.LpMinimize)
+#+END_SRC
+
+And start defining our decision variables.
+=PuLP= uses the =LpVariable= constructor for decision variables, which you can call like so:
+#+BEGIN_SRC python
+# Example
+v1 = pulp.LpVariable("v1", lower_bound, upper_bound)
+#+END_SRC
+
+Note that =lower_bound= and =upper_bound= are optional, and that every decision variable in a problem needs a unique name given as the first argument to the constructor.
+Add declarations of decision variables to the function you're defining, then continue by adding your constraints.
+Constraints in =PuLP= are added onto a particular problem:
+#+BEGIN_SRC python
+# Example
+problem += v1 - v2 >= 0
+problem += v1 + v2 < 100
+#+END_SRC
+
+And you can set an optimization criterion by adding some expression which is /not/ an inequality:
+#+BEGIN_SRC python
+# Example
+problem += v2 # optimize v2
+# OR:
+problem += v1 + v3 # optimize sum of v1 and v3
+#+END_SRC
+
+Finish your definition of =solve_castle_1=; after giving all the constraints and the optimization criterion, call =problem.solve()= and check its result:
+
+#+BEGIN_SRC python
+    problem.solve()
+    print("Status:", pulp.LpStatus[problem.status])
+    print("Total duration:", problem.objective.value())
+    for v in problem.variables():
+        print(v.name, "=", v.varValue)
+#+END_SRC
+
+Finally, call your function at the end of the file; for example, assuming placing one block takes 5 seconds and we have 7,256 blocks to place:
+
+#+BEGIN_SRC python
+# Example
+solve_castle_1(5, 7256)
+#+END_SRC
+
+For these parameters, it should take slightly over four hours to complete the castle if everyone works together optimally.  
+And the solver should figure that out in well under a second!
+
+* Crafting the Materials
+
+It's good to know how long the construction job will take, but now we need to figure out how to get the glass, the wood planks, and the cobble.  
+For this task, everyone has set aside their whole day and no one has any time conflicts.
+Recall that we need $X$ cobble, $Y$ glass panes, and $Z$ wood planks.
+Also remember that friends have different tools, so we can't treat our friends' labor as interchangeable: you can chop trees the fastest, friend B can dig for cobble the fastest, and so on.
+Finally, keep in mind that glass panes and wood planks have to be /processed/ from raw materials (and glass panes have two steps of processing: sand to glass blocks, and glass blocks to glass panes).
+
+If you aren't super familiar with Minecraft, this chart might come in handy.  
+The times will be different from =crafting.json=, which has abstracted away some details about, for example, moving to a particular spot; please don't worry about such inconsistencies right now.
+
+| Action                                   | Duration       |
+|------------------------------------------+----------------|
+| Get cobble from stone by hand            | (not possible) |
+| Get cobble from stone by wood pickaxe    | 1.15s          |
+| Get cobble from stone by diamond pickaxe | 0.3s           |
+| Get sand from ground by hand             | 0.75s          |
+| Get sand from ground by wood shovel      | 0.4s           |
+| Get wood from tree by hand               | 3s             |
+| Get wood from tree by wood axe           | 1.5s           |
+| Get wood from tree by iron axe           | 0.5s           |
+
+We can assume that all the friends are proficient players and can complete any crafting operation in one second.
+For reference, 1 wood log can be crafted into 4 wood planks, and 6 glass blocks can be crafted into 16 glass panes.
+
+Finally, smelting sand into glass takes ten seconds per unit of sand, and each unit of sand produces one unit of glass.
+The friends have a furnace already; assume a limitless supply of fuel thanks to, for example, buckets of lava.
+It is /extremely important/ to note that while sand is being smelted into glass, everyone can perform other actions; in other words no one needs to stand around and wait for the furnace to finish (in fact, more sand can be gathered and piled in while some sand is being smelted).
+Similarly, one person can be crafting wood planks while another is harvesting wood.
+
+At this point, let's reflect on the problem's structure (you can do this in a file like =linprog_castle_2.txt=).
+In the previous problem we had to optimize the allocation of work-seconds among three interchangeable people, and only one type of task was being performed.
+Now, we need to decide how much time each person spends doing each task, still minimize how long the longest-working person works.
+To model this problem we will need a few tricks, and this reflection should guide us through:
+
+1. What are the decision variables in this problem?  Think about how many people are working and how many distinct types of tasks we need them to do.
+2. Does any part of our production process impose a /lower bound/ on how long the construction job will take, regardless of how we allocate people?  If so, what part of the job is it and what is that bound?
+3. Often in modeling linear programming problems, we need to introduce auxiliary variables for things like constraints or optimization criteria.  Let's imagine we have an auxiliary variable /duration;/ what does (2) tell us about duration?  What inequalities hold between duration and the net work-time of each of our three friends?  Hint: give one inequality per friend.
+4. How do we measure the team's progress towards completion for a specific task, in terms of the amount of time each person spends on each task?  For each task whose completion depends upon a time allocation from (1), give a mathematical expression (a linear combination) describing how far along that task is in terms of the time assignments from (1), the table above, and $X$, $Y$, and $Z$.
+  - Another way to think about this question is to ask how we know we have gathered enough cobble or made enough planks---and how much sand and wood do we need for Y and Z panes and planks?  
+  - Feel free to introduce new constants or variables---for example, how many planks do we need?  How many planks do we get per unit wood?  How much sand can friend B shovel per unit time?).
+
+There are two nice programming tricks that can help with this problem.
+The first is creating lists of =LpVariables=---and perhaps parallel lists of coefficients---and the second is the use of =lpSum= to add them up (=lpSum= is not necessary to solve this problem but it can help a little bit).
+
+#+BEGIN_SRC python
+# Example
+names = ["q", "r", "s", "t"]
+variables = [pulp.LpVariable("v_"+varname,0) for varname in names]
+# Allocate 50 units among q, r, s, t
+problem += pulp.lpSum(variables) <= 50
+#+END_SRC
+
+Just like before, we'll create a new file =linprog_castle_2.py=.
+The automatic tests for this module are in =test_linprog_castle_2.py=.
+You can run them with =python test_linprog_castle_2.py=.
+Feel free to modify this file as you like to add tests, try out new examples, and so on.
+
+#+BEGIN_SRC python
+import pulp
+
+def solve_castle_2(Xcobble,Ypanes,Zplanks):
+    problem = pulp.LpProblem("Get materials",pulp.LpMinimize)
+    # You can define auxiliary variables and derived constants here
+    # Then your decision variables
+    # And your constraints
+    # And finally your optimization criterion
+    # Then:
+    problem.solve()
+    print("Status:", pulp.LpStatus[problem.status])
+    print("Total duration:", problem.objective.value())
+    for v in sorted(list(problem.variables()),key=lambda v:v.name):
+        print(v.name, "=", v.varValue)
+#+END_SRC
+
+Again, to test it out:
+
+#+BEGIN_SRC python
+# Example
+solve_castle_2(4000,256,3000)
+#+END_SRC
+
+Surprisingly, this can be completed in a little under seventeen minutes; this shows how unrealistic the assumption of ignoring travel time can be!
+In future assignments, these assumptions will be tightened up.
+
+5. Briefly describe three qualitatively different situations around the allocation of workers to tasks according to your encoding.
+  1. 
+  2. 
+  3. 
+6. If you wanted to model travel times with resources in different locations, how would you need to modify your encoding? 
+
+Submit your python files and text files and proceed to =intprog_planning=.
