@@ -1,0 +1,302 @@
+#+OPTIONS: ':t *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:nil broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
+#+TITLE: Path Planning Four Ways
+#+DATE: <2018-08-29>
+#+AUTHOR: Joseph C. Osborn
+#+EMAIL: joseph.osborn@pomona.edu
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 26.1 (Org mode 9.1.13)
+
+This assignment is the first part of the planning problem sequence.
+
+In this project, you will implement four different algorithms that approach /path planning/ as a problem in graph search.
+There are other approaches to path planning in different domains, but here we focus on finding paths in four-connected graphs (i.e., the agent can move north, east, south, and west) where nodes have associated movement costs.
+We'll implement and compare four related algorithms:
+
+1. Breadth-first search
+2. Dijkstra's algorithm
+3. Best-first search
+4. A*
+
+You may have encountered some of these algorithms in previous classes, since graph search is a fundamental technique in computer science.
+If not, don't worry!
+In this course, assignments include a series of /reflections/ intended to help you develop the insights required to implement the assignment.
+Let's begin with a reflection to practice. 
+Type your answers (with the question numbers) into =path_planning.txt=.
+
+1. In your own words, what is a /graph/ in the discrete mathematics/computer science sense?  How might you represent a graph using data structures in a computer program?  Pseudo-code is fine.
+2. Have you encountered any of the above algorithms before?
+3. Besides planning movement through a physical space, what other uses do you think they might have in analyzing real-world systems, understanding the behavior of computer programs, or other areas?  Describe one other compelling use case for graph search.
+4. If we restrict our attention to four-connected graphs (like chess-boards or grids), does that change our answer to question (1)?  Is there another, more appropriate representation we might consider that saves memory space or seems easier to process? 
+
+In these assignments, you will also find source code examples and skeletons; it is highly recommended that you type these out again by hand rather than copying and pasting, to ensure that you read them closely.
+Some code snippets will be labeled "Example", and you are encouraged to try them out either by inserting them directly into your code and seeing what they do, or experimenting at the command line interpreter:
+
+#+BEGIN_SRC bash
+$ python -i path_planning.py # In your shell prompt
+>>> print("Let's try it out!")
+#+END_SRC
+
+The goal of this assignment is for you to:
+- Familiarize yourself with Python if you have not encountered it before.
+- Read in a data file and produce a representation of the world such that you can solve a generic search problem.
+- Learn the ins and outs of four different search algorithms.
+- Consider how /domain knowledge/ can help guide the development of AI algorithms, and the tension between generic and specialized approaches.
+
+Make sure your Python file for this assignment, =path_planning.py=, has these modules imported:
+
+#+BEGIN_SRC 
+from typing import Set, Dict, Tuple, Optional, Sequence, List
+import heapq
+import math
+import time
+#+END_SRC
+
+Let's begin by loading a map into a two-dimensional array of unicode characters (specifically, emoji).
+We are using Python 3 and annotating types wherever we can.
+If you encounter a bug in your program, begin by running =mypy path_planning.py= to ensure there are no trivial type errors to deal with first.
+
+#+BEGIN_SRC python
+# This is how we write a type alias in Python
+Map = List[List[str]]
+# Now we can write load_map in terms of Map:
+def load_map(mapfile:str) -> Map:
+    with open(mapfile,encoding='utf-8') as infile:
+        # This "list comprehension" is a very useful syntactic trick
+        return [list(line.rstrip()) for line in infile]
+#+END_SRC
+
+#+BEGIN_SRC python
+# Example
+terrain = load_map('terrain.txt')
+print(terrain)
+#+END_SRC
+
+Cute!
+
+5. Describe, in your own words, the format of =terrain.txt= and the implementation of =load_map=.
+6. If we want to talk about a specific spot in the terrain (by an $x$ and $y$ coordinate), how would we write that?  Python indexes lists using square brackets, so we might write =l[5]= for the sixth element of a list (by zero-indexing).
+7. What are the neighbors of the cell at $(3,3)$?  Given a coordinate pair $(x,y)$, what are its four neighbors in terms of mathematical operations on $x$ and $y$?
+
+Now, implement a function =find_neighbors= which gives the four neighbor coordinate pairs of a given location.
+We are going to add an additional wrinkle here, which is that different tiles have different associated movement costs:
+
+- 🌿, 🌉, and 🌲 cost 1 point since they're easy to walk past
+- 🌼 costs 2 points since we'd rather not stomp on the flowers.
+- 🌊 costs 5 points since we really don't want to get our clothes wet.
+
+So, depending on the kind of tile at a given location, we also want to pick the right /cost/ for moving through that tile.
+
+#+BEGIN_SRC python
+Point = Tuple[int, int]
+# Now we can define our function in terms of Points
+def find_neighbors(terrain:Map, p:Point) -> List[Tuple[Point, int]]:
+    # Python has destructuring assignment.
+    # You could just as well write `x = p[0]` and `y = p[1]`.
+    x,y = p
+    neighbors : List[Tuple[Point,int]] = []
+    # A. Your code here...
+    # Feel free to introduce other variables if they'd be helpful too.
+    return neighbors
+#+END_SRC 
+
+To try it out:
+
+#+BEGIN_SRC python
+# Example
+terrain = load_map('terrain.txt')
+print(find_neighbors(terrain, (3,3)))
+#+END_SRC
+
+Let's take a quick detour to implement a helper function to print a path nicely:
+
+#+BEGIN_SRC python
+def pretty_print_path(terrain: Map, path: List[Point]):
+    emojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋']
+    # This is a "dictionary comprehension" like the list comprehension above
+    path2len = {location:distance for distance,location in enumerate(path)}
+    output = []
+    for yy,row in enumerate(terrain):
+        row_str = ''
+        for xx, cur in enumerate(row):
+            if (xx,yy) in path2len:
+                row_str += emojis[path2len[(xx,yy)] % len(emojis)]
+            else:
+                row_str += cur
+        output.append(row_str)
+    return '\\n'.join(output)
+
+def print_search_result(result:Tuple[int, int, Optional[List[Point]]]) -> None:
+    print("Visited:",result[0])
+    if result[2]:
+        print("Best path cost:",result[1])
+        print(pretty_print_path(result[2]))
+    else:
+        print("No path found")
+
+#+END_SRC
+
+Now that we have our nodes (the terrain graph) and our edge relation (=find_neighbors=), we are ready to implement graph search!
+
+* Uninformed Search
+
+Our first three algorithms are called /uninformed/ search algorithms.
+
+8. Why might breadth-first search and Dijkstra's algorithm be considered /uninformed/?
+9. In breadth-first search, where do newly expanded nodes go in the open list?  Do you know the name of the abstract data structure where the "oldest" node comes out first?
+
+Our breadth-first search function will return a tuple of the number of nodes visited during the search, the cost of the best found path (or -1 if no path exists), and the best found path (or =None= if no path exists).
+We'll track the best costs seen so far in a =dict= called =best_costs=, along with the best predecessor point (so we can trace backwards later to find the full path).
+Once you have an implementation you'd like to test, run =python test_path_planning.py= to see what the autograder thinks of it.
+
+#+BEGIN_SRC python
+def breadth_first(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
+    open_list: List[Point] = [start]
+    # We'll treat start specially
+    best_costs: Dict[int, Point] = {start:(0, start)}
+    visit_count = 0
+    while open_list:
+        # Breadth-first search takes the first thing from the list...
+        cost, node = open_list.pop(0)
+        visit_count += 1
+        neighbors = find_neighbors(terrain, node)
+        for neighbor, neighbor_cost in neighbors:
+            # B. And does something with each neighbor node (where does the new node go in the list?)
+            # Be sure to track the best cost and predecessor for each new node in `best_costs` too, and avoid re-expanding nodes which we've seen before with better costs. 
+            pass
+        pass
+    # C. If any path was found to goal, return the best such path.
+    # Otherwise, return:
+    return (visit_count, -1, None)
+#+END_SRC  
+
+Try it out with a few different coordinate pairs:
+
+#+BEGIN_SRC python
+# Example
+terrain = load_map('terrain.txt')
+print_search_result(breadth_first(terrain, (0, 0), (10, 0)))
+print_search_result(breadth_first(terrain, (2, 3), (7, 0)))
+print_search_result(breadth_first(terrain, (5, 5), (0, 1)))
+print_search_result(breadth_first(terrain, (0, 0), (11, 10)))
+#+END_SRC
+
+10. Is the first path found by best-first search guaranteed to be cost-optimal?  Step-optimal?  Is the overall result of best-first search guaranteed to be cost-optimal?
+11. Graph search algorithms are generally described in terms of the /state/ they are considering and the /transition relation/ which gives successor states.  In your implementation above, what is a state?  What is the transition relation?
+12. Dijkstra's algorithm differs from breadth-first search in a key way.  What information does it consider which breadth-first search ignores?  What does this mean for our representation of the search state?
+
+Let's implement Dijkstra's algorithm next.
+As you may have noticed in your reflection, the search state must now include the net cost to go for a given point in the path:
+
+#+BEGIN_SRC python
+def dijkstra(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
+    open_list: List[Tuple[int, Point]] = [(0, start)]
+    best_costs: Dict[int, Point] = {start:(0, start)}
+    visit_count = 0
+    while open_list:
+        # Dijkstra's search uses the priority queue data structure
+        cost, node = heapq.heappop(open_list)
+        visit_count += 1
+        neighbors = find_neighbors(terrain, node)
+        for neighbor, neighbor_cost in neighbors:
+            # D. And does something with each neighbor node.
+            # Hint: `heapq.heappush` may be useful here.
+            # Be sure to track the best cost and predecessor for each new node in `best_costs` too!
+            pass
+        pass
+    return (visit_count, -1, None)
+#+END_SRC
+
+13. Try Dijkstra's algorithm out on the examples from before.  How does it differ in terms of visited nodes?  In terms of found paths?
+14. Is the first path found by Dijkstra's algorithm guaranteed to be cost-optimal?  What optimizations would be possible if the first-found path were also an optimal path?
+15. In breadth-first search, we were able to eventually terminate by declining to expand nodes we had already expanded previously with better costs.  Is special code to do this necessary in Dijkstra's algorithm?  Why or why not?
+
+* Heuristic Search
+
+We learned something interesting by comparing breadth-first search and Dijkstra's algorithm.
+Both algorithms are guaranteed to give optimal solutions, but intuitively it doesn't make much sense to e.g. explore all the water tiles before trying the bridge.
+In this path planning domain, we can use a /heuristic/---an informed guess---about the /remaining/ path cost from a given tile in order to inform our search process.
+
+16. Given an $(x,y)$ position and a goal $(gx,gy)$, and assuming every step is as cheap as possible, what is the least number of steps required to get from $(x,y)$ to $(gx,gy)$, ignoring the tiles at each position in the map?  (Remember that diagonal moves are not possible!)
+
+In four-connected graphs, the Manhattan Distance (or rectilinear distance, or city-block distance) is a good choice for a heuristic.
+It measures how many "steps" you must take in each direction to get from one point to another, ignoring movement costs.
+Let's write it in Python:
+
+#+BEGIN_SRC python
+def manhattan_distance(p1:Point, p2:Point) -> int:
+    # E. Implement it here!  To calculate absolute value in Python, you can use abs(a-b).
+    return 0
+#+END_SRC
+
+How does pathfinding go if we /just/ use the heuristic value and ignore the cost to go so far?
+
+16. Do you think this strategy would give optimal paths if we always picked the first path we found?  Why or why not?
+17. Does best-first search need to return the first found path or should it wait until examining all paths, as in breadth-first search?  Why?
+18. Should best-first search avoid re-expanding nodes with higher costs, as we did for the earlier algorithms?
+
+#+BEGIN_SRC python
+def best_first(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
+    # In the open list we use heuristic values as the priority
+    open_list: List[Tuple[int, Point]] = [(manhattan_distance(start, goal), start)]
+    # But in best_costs we still want to track real costs
+    best_costs: Dict[int, Point] = {start:(0, start)}
+    visit_count = 0
+    while open_list:
+        cost, node = heapq.heappop(open_list)
+        visit_count += 1
+        neighbors = find_neighbors(terrain, node)
+        for neighbor, neighbor_cost in neighbors:
+            # F. And best-first search also does something with each neighbor node.
+            # Hint: `heapq.heappush` is still useful.
+            # Be sure to track the best cost and predecessor for each new node in `best_costs`, and use the heuristic value for this node to guide the search.
+            pass
+        pass
+    return (visit_count, -1, None)
+#+END_SRC
+
+19. Try best-first search on the examples from before.  How does it differ in terms of visited nodes?  In terms of found paths?
+20. What is the main difference between best-first search and your implementation of Dijkstra's algorithm from before?
+
+At this point, we are equipped to explore /A*/, an extremely popular informed search algorithm that combines the best aspects of best-first search (exploring promising parts of the search space) and Dijkstra's search (exploring cheaper options before more expensive ones).
+
+21. Can you think of a way to combine the priority information from Dijkstra's algorithm (cost to get there) and from best-first search (estimated cost to reach the goal)?  What is the priority in the search state, and what do you track in =best_costs=?
+
+#+BEGIN_SRC python
+def astar(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
+    # G. What do we use as priority values in the open list? 
+    open_list: List[Tuple[int, Point]] = [(?, start)]
+    # In best_costs we still want to track real costs
+    best_costs: Dict[int, Point] = {start:(0, start)}
+    visit_count = 0
+    while open_list:
+        cost, node = heapq.heappop(open_list)
+        visit_count += 1
+        neighbors = find_neighbors(terrain, node)
+        for neighbor, neighbor_cost in neighbors:
+            # F. And A* also does something with each neighbor node.  You need to calculate both the heuristic value and the cost to get to this neighbor, and do something with the result.
+            # Hint: `heapq.heappush` is still useful.
+            # Be sure to track the best cost and predecessor for each new node in `best_costs`, and use your combined priority for this node to guide the search.
+            pass
+        pass
+    return (visit_count, -1, None)
+
+#+END_SRC 
+
+22. Compare your implementation of A* to your previous implementations in terms of nodes visited and paths found.
+23. Is the first solution found by A* in this domain guaranteed to be cost-optimal?
+24. What if we replace calls to the heuristic function (used as part of determining priority) with the constant 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
+25. How about if we replace the uses of the cost so far in the priority calculations with 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
+26. When a heuristic /overestimates/ the distance to the goal, it is called /inadmissible/.  We could make our heuristic inadmissible just by multiplying its output by some factor, say 10, before using its results in the priority calculation.  How does this affect nodes visited and path found for the examples given above?
+
+A* has interesting behavior with inadmissible heuristics, generally finding solutions earlier---but without the guarantee of optimality.  
+There is a deep literature in tweaks on A* for different domains and applications, including replanning (finding a new path after the path we've been following becomes invalid), anytime planning (getting a suboptimal solution quickly but improving the plan over time), and many other areas.  
+Some approaches like jump-point search or \theta* try to further minimize the number of nodes examined by taking advantage of structural details of top-down path planning.
+
+Now that you're all done with this, you're ready for /task planning./  
+Proceed to "Craft Planning with Iterative Widening."

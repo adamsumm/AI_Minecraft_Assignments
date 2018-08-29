@@ -13,7 +13,7 @@
 #+CREATOR: Emacs 26.1 (Org mode 9.1.13)
 
 This assignment is the second part of the planning problem sequence.
-The first part is "Path Planning Five Ways," which is a prerequisite for this section.
+The first part is "Path Planning Four Ways," which is a prerequisite for this section.
 
 In this assignment, you will be making a simple satisficing Minecraft crafting planner.
 Given an initial state, you will want to find a series of actions that gets you to a desired goal state. 
