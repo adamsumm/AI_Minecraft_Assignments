@@ -50,7 +50,7 @@ The goal of this assignment is for you to:
 
 Make sure your Python file for this assignment, =path_planning.py=, has these modules imported:
 
-#+BEGIN_SRC 
+#+BEGIN_SRC python
 from typing import Set, Dict, Tuple, Optional, Sequence, List
 import heapq
 import math
@@ -79,7 +79,7 @@ print(terrain)
 
 Cute!
 
-5. Describe, in your own words, the format of =terrain.txt= and the implementation of =load_map=.
+5. [@5] Describe, in your own words, the format of =terrain.txt= and the implementation of =load_map=.
 6. If we want to talk about a specific spot in the terrain (by an $x$ and $y$ coordinate), how would we write that?  Python indexes lists using square brackets, so we might write =l[5]= for the sixth element of a list (by zero-indexing).
 7. What are the neighbors of the cell at $(3,3)$?  Given a coordinate pair $(x,y)$, what are its four neighbors in terms of mathematical operations on $x$ and $y$?
 
@@ -147,12 +147,13 @@ Now that we have our nodes (the terrain graph) and our edge relation (=find_neig
 
 Our first three algorithms are called /uninformed/ search algorithms.
 
-8. Why might breadth-first search and Dijkstra's algorithm be considered /uninformed/?
+8. [@8] Why might breadth-first search and Dijkstra's algorithm be considered /uninformed/?
 9. In breadth-first search, where do newly expanded nodes go in the open list?  Do you know the name of the abstract data structure where the "oldest" node comes out first?
 
 Our breadth-first search function will return a tuple of the number of nodes visited during the search, the cost of the best found path (or -1 if no path exists), and the best found path (or =None= if no path exists).
 We'll track the best costs seen so far in a =dict= called =best_costs=, along with the best predecessor point (so we can trace backwards later to find the full path).
 Once you have an implementation you'd like to test, run =python test_path_planning.py= to see what the autograder thinks of it.
+Feel free to modify the test file as you like to add tests, try out new examples, and so on.
 
 #+BEGIN_SRC python
 def breadth_first(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
@@ -186,7 +187,7 @@ print_search_result(breadth_first(terrain, (5, 5), (0, 1)))
 print_search_result(breadth_first(terrain, (0, 0), (11, 10)))
 #+END_SRC
 
-10. Is the first path found by best-first search guaranteed to be cost-optimal?  Step-optimal?  Is the overall result of best-first search guaranteed to be cost-optimal?
+10. [@10] Is the first path found by best-first search guaranteed to be cost-optimal?  Step-optimal?  Is the overall result of best-first search guaranteed to be cost-optimal?
 11. Graph search algorithms are generally described in terms of the /state/ they are considering and the /transition relation/ which gives successor states.  In your implementation above, what is a state?  What is the transition relation?
 12. Dijkstra's algorithm differs from breadth-first search in a key way.  What information does it consider which breadth-first search ignores?  What does this mean for our representation of the search state?
 
@@ -212,7 +213,7 @@ def dijkstra(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[L
     return (visit_count, -1, None)
 #+END_SRC
 
-13. Try Dijkstra's algorithm out on the examples from before.  How does it differ in terms of visited nodes?  In terms of found paths?
+13. [@13] Try Dijkstra's algorithm out on the examples from before.  How does it differ in terms of visited nodes?  In terms of found paths?
 14. Is the first path found by Dijkstra's algorithm guaranteed to be cost-optimal?  What optimizations would be possible if the first-found path were also an optimal path?
 15. In breadth-first search, we were able to eventually terminate by declining to expand nodes we had already expanded previously with better costs.  Is special code to do this necessary in Dijkstra's algorithm?  Why or why not?
 
@@ -222,7 +223,7 @@ We learned something interesting by comparing breadth-first search and Dijkstra'
 Both algorithms are guaranteed to give optimal solutions, but intuitively it doesn't make much sense to e.g. explore all the water tiles before trying the bridge.
 In this path planning domain, we can use a /heuristic/---an informed guess---about the /remaining/ path cost from a given tile in order to inform our search process.
 
-16. Given an $(x,y)$ position and a goal $(gx,gy)$, and assuming every step is as cheap as possible, what is the least number of steps required to get from $(x,y)$ to $(gx,gy)$, ignoring the tiles at each position in the map?  (Remember that diagonal moves are not possible!)
+16. [@16] Given an $(x,y)$ position and a goal $(gx,gy)$, and assuming every step is as cheap as possible, what is the least number of steps required to get from $(x,y)$ to $(gx,gy)$, ignoring the tiles at each position in the map?  (Remember that diagonal moves are not possible!)
 
 In four-connected graphs, the Manhattan Distance (or rectilinear distance, or city-block distance) is a good choice for a heuristic.
 It measures how many "steps" you must take in each direction to get from one point to another, ignoring movement costs.
@@ -236,9 +237,9 @@ def manhattan_distance(p1:Point, p2:Point) -> int:
 
 How does pathfinding go if we /just/ use the heuristic value and ignore the cost to go so far?
 
-16. Do you think this strategy would give optimal paths if we always picked the first path we found?  Why or why not?
-17. Does best-first search need to return the first found path or should it wait until examining all paths, as in breadth-first search?  Why?
-18. Should best-first search avoid re-expanding nodes with higher costs, as we did for the earlier algorithms?
+17. [@17] Do you think this strategy would give optimal paths if we always picked the first path we found?  Why or why not?
+18. Does best-first search need to return the first found path or should it wait until examining all paths, as in breadth-first search?  Why?
+19. Should best-first search avoid re-expanding nodes with higher costs, as we did for the earlier algorithms?
 
 #+BEGIN_SRC python
 def best_first(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
@@ -260,12 +261,12 @@ def best_first(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional
     return (visit_count, -1, None)
 #+END_SRC
 
-19. Try best-first search on the examples from before.  How does it differ in terms of visited nodes?  In terms of found paths?
-20. What is the main difference between best-first search and your implementation of Dijkstra's algorithm from before?
+20. [@20] Try best-first search on the examples from before.  How does it differ in terms of visited nodes?  In terms of found paths?
+21. What is the main difference between best-first search and your implementation of Dijkstra's algorithm from before?
 
 At this point, we are equipped to explore /A*/, an extremely popular informed search algorithm that combines the best aspects of best-first search (exploring promising parts of the search space) and Dijkstra's search (exploring cheaper options before more expensive ones).
 
-21. Can you think of a way to combine the priority information from Dijkstra's algorithm (cost to get there) and from best-first search (estimated cost to reach the goal)?  What is the priority in the search state, and what do you track in =best_costs=?
+22. [@22] Can you think of a way to combine the priority information from Dijkstra's algorithm (cost to get there) and from best-first search (estimated cost to reach the goal)?  What is the priority in the search state, and what do you track in =best_costs=?
 
 #+BEGIN_SRC python
 def astar(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
@@ -288,11 +289,12 @@ def astar(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List
 
 #+END_SRC 
 
-22. Compare your implementation of A* to your previous implementations in terms of nodes visited and paths found.
-23. Is the first solution found by A* in this domain guaranteed to be cost-optimal?
-24. What if we replace calls to the heuristic function (used as part of determining priority) with the constant 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
-25. How about if we replace the uses of the cost so far in the priority calculations with 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
-26. When a heuristic /overestimates/ the distance to the goal, it is called /inadmissible/.  We could make our heuristic inadmissible just by multiplying its output by some factor, say 10, before using its results in the priority calculation.  How does this affect nodes visited and path found for the examples given above?
+23. [@23] Compare your implementation of A* to your previous implementations in terms of nodes visited and paths found.
+24. Is the first solution found by A* in this domain guaranteed to be cost-optimal?
+25. What if we replace calls to the heuristic function (used as part of determining priority) with the constant 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
+26. How about if we replace the uses of the cost so far in the priority calculations with 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
+27. When a heuristic /overestimates/ the distance to the goal, it is called /inadmissible/.  We could make our heuristic inadmissible just by multiplying its output by some factor, say 10, before using its results in the priority calculation.  How does this affect nodes visited and path found for the examples given above?
+28. If you want an extra credit opportunity (up to 10% assignment credit), come up with some interesting/cool map text files and submit them as separate text files along with your assignment.  In this reflection slot, write why you think each map is interesting. 
 
 A* has interesting behavior with inadmissible heuristics, generally finding solutions earlier---but without the guarantee of optimality.  
 There is a deep literature in tweaks on A* for different domains and applications, including replanning (finding a new path after the path we've been following becomes invalid), anytime planning (getting a suboptimal solution quickly but improving the plan over time), and many other areas.  

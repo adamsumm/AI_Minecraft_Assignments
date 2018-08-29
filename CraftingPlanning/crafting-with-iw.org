@@ -17,7 +17,7 @@ The first part is "Path Planning Four Ways," which is a prerequisite for this se
 
 In this assignment, you will be making a simple satisficing Minecraft crafting planner.
 Given an initial state, you will want to find a series of actions that gets you to a desired goal state. 
-You will first try your implementations of generic graph search (Dijkstra's algorithm and A*) to discover whether they are suitable for this task, and then implement a specialized planning algorithm called Iterative Widening.
+You will first try an implementation of generic graph search (Dijkstra's algorithm) to discover whether it is suitable for this task, and then implement a specialized planning algorithm called Iterative Widening.
 
 In this assignment you will:
 
@@ -25,7 +25,7 @@ In this assignment you will:
 - Create a representation of a state space such that you can check preconditions and apply effects in an efficient manner
 - Create a method to convert the intuitive predicate based state system into a propositional system
 - Implement width-search via Iterative Widening to efficiently find a plan that gets from an arbitrary state space to a desired state space
-- Compare width-search to optimal search methods such as Dijkstra’s algorithm and A*
+- Compare width-search to optimal search methods such as Dijkstra’s algorithm
 
 The goal of this assignment is for you to understand:
 
@@ -189,7 +189,7 @@ for name, rule in Crafting['Recipes'].items():
 Now we have our state representation and our action representation for the crafting domain.
 Let's reflect.
 
-5. What was the state representation in the path planning assignment?
+5. [@5] What was the state representation in the path planning assignment?
 6. What was the action representation?
 7. How many possible actions are there in the whole domain, and how many of those are possible in a given state?
 
@@ -200,13 +200,14 @@ Let's try it.
 
 ** Planning via Graph Search
 
-8. Consider your implementation of Dijkstra's algorithm.  What would need to change so it works on states-and-actions instead of locations-and-directions?
+8. [@8] Consider your implementation of Dijkstra's algorithm.  What would need to change so it works on states-and-actions instead of locations-and-directions?
 
 #+BEGIN_SRC python
-def plan_dijkstra(initial: State, goal: State) -> Optional[Tuple[int, State, List[str]]]:
+def plan_dijkstra(initial: State, goal: State) -> Tuple[int, int, Optional[List[str]]]:    
     start_time = time.time()
     # D. Implement it here!  When you find a solution, print out the number of nodes visited and the time it took to get there.  If you don't find a solution, print out the number of nodes visited and the time it took to fail. 
-    # Return None or else a tuple of (cost, final_state, path) where path is a list of recipe names.
+    # Feel free to use or modify the solution printing routine from the last exercise.
+    # Return a tuple of (nodes_visited, -1, None) if no path exists, or else a tuple of (nodes_visited, cost, path) where path is a list of recipe names.
     pass
 #+END_SRC
 
@@ -219,23 +220,14 @@ print(plan_dijkstra(State.from_dict({'wood':1}),
                     State.from_dict({'ingot':1})))
 #+END_SRC  
 
-9. Try to apply A* here.  What heuristic would you want to use?  Is that heuristic admissible?  Is that a problem?
-
-#+BEGIN_SRC python
-def plan_astar(initial: State, goal: State) -> Optional[Tuple[int, State, List[str]]]:
-    start_time = time.time()
-    # E. Implement it here!  When you find a solution, print out the number of nodes visited and the time it took to get there.  If you don't find a solution, print out the number of nodes visited and the time it took to fail. 
-    # Return None or else a tuple of (cost, final_state, path) where path is a list of recipe names.
-    pass
-#+END_SRC
-
-10. What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit and how long does it take exactly?  What heuristic ended up working best?
+9. [@9] Imagine applying A* here.  What heuristic would you want to use?  Is that heuristic admissible?  Is that a problem?
+10. What's the largest planning problem (initial and goal state) you can think up which your Dijkstra's implementation can solve optimally within 30 seconds?  How many nodes does it visit and how long does it take in wall-clock time?
 
 ** Planning with Iterative Widening
 
 Let's compare against a dedicated planning algorithm, rather than applying graph search naively.
 Planning domains have some significant differences from general graph search problems---let's reflect on what they might be.
-11. In graph search, what is the goal of a search?  How is that different from the goal of a planning problem?
+11. [@11] In graph search, what is the goal of a search?  How is that different from the goal of a planning problem?
 12. In graph search, what are the preconditions for traversing an edge?  How does this differ in a planning problem?
 13. In graph search, detecting cycles is relatively cheap.  Is that the case for planning problems?
 14. Is there more than one type of "cycle" in our crafting planning problem?
@@ -341,7 +333,8 @@ def width_search(initial:State, goal:State, WMax:int) -> Optional[int, State, Li
         seen_combinations = array.array('B', [0 for combo in all_combinations])
         # Initialize seen_combinations
         see_state(initial, all_combinations, seen_combinations))
-        open_list = [(0, initial, [])]
+        open_list:List[Tuple[int,State]] = [(0, initial)]
+        best_costs:Dict[State, Tuple[int, State]] = {initial:(0, initial)} 
         # D. Any other setup you may need for the search
         while open_list:
             # E. This should look like your graph search, except...
@@ -358,11 +351,12 @@ Try it out like so:
 # Try harder ones once you have these down
 
 print(width_search({},{'bench':1},4))
-#print(width_search({'wood':1},{'iron_pickaxe':1},4))
-#print(width_search({},{cart:1},4))
+print(width_search({'wood':1},{'iron_pickaxe':1},4))
+print(width_search({},{'rail':1},4))
+print(width_search({},{'cart':1},4))
 #+END_SRC
 
-16. What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit and how long does it take exactly?
+16. [@16] What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit and how long does it take exactly?
 17. How does increasing or decreasing the value of $WMax$ change the time to find a solution, or: what sorts of craft planning situations benefit from increasing $WMax$? 
 18. Is iterative widening guaranteed to give optimal solutions for this problem?  In other words, does there exist a crafting problem where a width bound of $w$ gives a suboptimal solution while $w+1$ gives a better one?
 19. Can you think of a way to apply iterative widening to the path planning problem?  Do you think it would perform better than A* there or worse?  Why?

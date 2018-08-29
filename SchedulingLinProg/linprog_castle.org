@@ -29,6 +29,8 @@ We'll solve this problem in two steps: crafting the final materials and placing 
 Also, as a simplification, we'll assume that we complete all of the gathering and crafting and then all of the block placing.
 Placing the blocks is a simpler problem than crafting the materials, so let's start there.
 
+This assignment will cover multiple text and Python files to minimize distractions and possible confusion.
+
 * Constructing the Castle
 On the day you planned to actually build the castle, you and your friends have to log on and off at different times (perhaps it's a weekend or a holiday break and you have some other commitments).
 
@@ -195,7 +197,7 @@ solve_castle_2(4000,256,3000)
 Surprisingly, this can be completed in a little under seventeen minutes; this shows how unrealistic the assumption of ignoring travel time can be!
 In future assignments, these assumptions will be tightened up.
 
-5. Briefly describe three qualitatively different situations around the allocation of workers to tasks according to your encoding.
+5. [@5] Briefly describe three qualitatively different situations around the allocation of workers to tasks according to your encoding.
   1. 
   2. 
   3. 
