@@ -29,7 +29,7 @@ import random
 import sys
 import time
 import malmoutils
-
+from PIL import Image
 from noise import pnoise3, snoise3
 
 
@@ -97,15 +97,16 @@ def GenCuboid(x1, y1, z1, x2, y2, z2, blocktype):
 
 def GenItem(x, y, z, itemtype):
     return '<DrawItem x="' + str(x) + '" y="' + str(y) + '" z="' + str(z) + '" type="' + itemtype + '"/>'
-def GenEntity(x,y,z,type):
-    return '<DrawEntity x="' + str(x) + '" y="' + str(y) + '" z="' + str(z) + '" type="' + type + '"/>'
+def GenEntity(x,y,z,yaw,type):
+    return '<DrawEntity x="' + str(x) + '" y="' + str(y) + '" z="' + str(z)+ '" yaw="' + str(yaw) +  '" type="' + type + '"/>'
 #----------------------------------------------------------------------------------------------------------------------------------
 #snowy mountain? 3;1*minecraft:bedrock,7*minecraft:dirt,1*minecraft:grass;13;village
 #grass field? "3;1*minecraft:bedrock,7*minecraft:dirt,1*minecraft:grass;4;village" />
 #3 is desert
 #tallgrass is grass
-
+last_locale = None
 def generate_world_and_description():
+    global last_locale
     description_string = []
     missionXML = '''<?xml version="1.0" encoding="UTF-8" ?>
     <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -126,6 +127,10 @@ def generate_world_and_description():
                 ("the desert ", '<FlatWorldGenerator generatorString="3;1*minecraft:bedrock,7*minecraft:dirt,1*minecraft:sand;2;village" />'),
                 ]
     locale = random.choice(locales)
+    while locale == last_locale:
+        locale = random.choice(locales)
+
+    last_locale = locale
 
     description_string.append(locale[0])
 
@@ -168,19 +173,19 @@ def generate_world_and_description():
         pass
     if c == 'pig':
         thing_string.append('a pig')
-        to_add += GenEntity(random.randint(-10,10),9,random.randint(-5,0),'Pig')
+        to_add += GenEntity(random.randint(-5,5),9,random.randint(-5,0),random.random(),'Pig')
     if c == 'cow':
         thing_string.append('a cow')
-        to_add += GenEntity(random.randint(-10,10),9,random.randint(-5,0),'Cow')
+        to_add += GenEntity(random.randint(-5,5),9,random.randint(-5,0),random.random(),'Cow')
     if c == 'sheep':
         thing_string.append('a sheep')
-        to_add += GenEntity(random.randint(-10,10),9,random.randint(-5,0),'Sheep`')
+        to_add += GenEntity(random.randint(-5,5),9,random.randint(-5,0),random.random(),'Sheep`')
     if c == 'zombie':
         thing_string.append('a zombie')
-        to_add += GenEntity(random.randint(-10,10),9,random.randint(-5,0),'Zombie')
+        to_add += GenEntity(random.randint(-5,5),9,random.randint(-5,0),random.random(),'Zombie')
     if c == 'creeper':
         thing_string.append('a creeper')
-        to_add += GenEntity(random.randint(-10,10),9,random.randint(-5,0),'Creeper')
+        to_add += GenEntity(random.randint(-5,5),9,random.randint(-5,0),random.random(),'Creeper')
 
     if len(thing_string) >= 1:
         missionXML +=  '\n<DrawingDecorator>\n' + to_add + '</DrawingDecorator>'
@@ -209,117 +214,51 @@ def generate_world_and_description():
             </AgentStart>
             <AgentHandlers>
                 <ObservationFromFullStats/>
-                <ObservationFromGrid>
-                    <Grid name="nearby">
-                        <min x="-1" y="-1" z="-1"/>
-                        <max x="1" y="-1" z="1"/>
-                    </Grid>
-                    <Grid name="far" absoluteCoords="true">
-                        <min x="12" y="79" z="417"/>
-                        <max x="14" y="79" z="419"/>
-                    </Grid>
-                    <Grid name="very_far" absoluteCoords="true">
-                        <min x="-10711" y="55" z="347"/>
-                        <max x="-10709" y="55" z="349"/>
-                    </Grid>
-                </ObservationFromGrid>''' + video_requirements + '''
+                <VideoProducer viewpoint="0" want_depth="false">
+                <Width>160</Width>
+                <Height>120</Height>
+              </VideoProducer>
             </AgentHandlers>
         </AgentSection>
 
     </Mission>'''
     return ' '.join(description_string).replace('  ',' '), missionXML
 
+for ii in range(1000):
+    description_string, missionXML = generate_world_and_description()
+    print(missionXML)
+    print(description_string)
+    my_mission = MalmoPython.MissionSpec(missionXML,True)
+    my_mission_record = MalmoPython.MissionRecordSpec()
 
-missionXML = '''<?xml version="1.0" encoding="UTF-8" ?>
-    <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <About>
-            <Summary>It's Fun To Build Things!</Summary>
-        </About>
+    max_retries = 3
+    for retry in range(max_retries):
+        try:
+            agent_host.startMission( my_mission, my_mission_record )
+            break
+        except RuntimeError as e:
+            if retry == max_retries - 1:
+                print("Error starting mission",e)
+                print("Is the game running?")
+                exit(1)
+            else:
+                time.sleep(2)
 
-        <ServerSection>
-            <ServerHandlers>
-                <FlatWorldGenerator generatorString="3;1*minecraft:bedrock,7*minecraft:dirt,1*minecraft:snow;1;village" />
-                <DrawingDecorator>'''+ GenMountain(0,9,50,width=32) + GenMountain(-50,9,50,width=32) + GenMountain(30,9,40,width=32) +'\n' +GenTree(0,9,0, 0, 4, 4)  +'''
-                </DrawingDecorator>
-                <ServerQuitFromTimeUp timeLimitMs="1000" description="out_of_time"/>
-                <ServerQuitWhenAnyAgentFinishes />
-            </ServerHandlers>
-        </ServerSection>
-
-        <AgentSection mode="Survival">
-            <Name>The Explorer</Name>
-            <AgentStart>
-                <Placement x="0.5" y="9.0" z="-10"/>
-            </AgentStart>
-            <AgentHandlers>
-                <ObservationFromFullStats/>
-                <ObservationFromGrid>
-                    <Grid name="nearby">
-                        <min x="-1" y="-1" z="-1"/>
-                        <max x="1" y="-1" z="1"/>
-                    </Grid>
-                    <Grid name="far" absoluteCoords="true">
-                        <min x="12" y="79" z="417"/>
-                        <max x="14" y="79" z="419"/>
-                    </Grid>
-                    <Grid name="very_far" absoluteCoords="true">
-                        <min x="-10711" y="55" z="347"/>
-                        <max x="-10709" y="55" z="349"/>
-                    </Grid>
-                </ObservationFromGrid>''' + video_requirements + '''
-            </AgentHandlers>
-        </AgentSection>
-
-    </Mission>'''
-
-description_string, missionXML = generate_world_and_description()
-print(description_string)
-my_mission = MalmoPython.MissionSpec(missionXML,True)
-my_mission_record = MalmoPython.MissionRecordSpec()
-if recordingsDirectory:
-    my_mission_record.recordRewards()
-    my_mission_record.recordObservations()
-    my_mission_record.recordCommands()
-    my_mission_record.setDestination(recordingsDirectory + "//" + "Mission_1.tgz")
-    if agent_host.receivedArgument("record_video"):
-        my_mission_record.recordMP4(24,2000000)
-
-max_retries = 3
-for retry in range(max_retries):
-    try:
-        agent_host.startMission( my_mission, my_mission_record )
-        break
-    except RuntimeError as e:
-        if retry == max_retries - 1:
-            print("Error starting mission",e)
-            print("Is the game running?")
-            exit(1)
-        else:
-            time.sleep(2)
-
-world_state = agent_host.peekWorldState()
-while not world_state.has_mission_begun:
-    time.sleep(0.1)
     world_state = agent_host.peekWorldState()
-    
-while world_state.is_mission_running:
-    world_state = agent_host.peekWorldState()
+    while not world_state.has_mission_begun:
+        time.sleep(0.1)
+        world_state = agent_host.peekWorldState()
+    frames = 0
+    print('Mission Started')
+    while world_state.is_mission_running:
+        world_state = agent_host.peekWorldState()
+    frame = world_state.video_frames[-1]
+    image = Image.frombytes('RGB', (frame.width, frame.height), bytes(frame.pixels) )
+    image.save('Data/{}.png'.format(ii) )
+        
 
-# We also use this sample as a test. In this section we verify that
-# the expected things were received.
-if agent_host.receivedArgument("test"):
-    # check the height of the player in the last observation    
-    assert len(world_state.observations) > 0, 'No observations received'
-    obs = json.loads( world_state.observations[-1].text )
-    player_y = obs[u'YPos']
-    print('Player at y =',player_y)
-    assert math.fabs( player_y - 83.0 ) < 0.01, 'Player not at expected height'
+    with open('Data/{}.txt'.format(ii),'w') as description_file:
+        description_file.write(description_string)
     
-    # check the grid observations
-    for obs in world_state.observations:
-        assert '"nearby":["air","quartz_block","quartz_block","air","wool","wool","air","wool","air"]' in obs.text, 'Nearby observation incorrect:'+obs.text
-        assert '"far":["ice","ice","air","ice","ice","air","quartz_block","quartz_block","quartz_block"]' in obs.text, 'Far observation incorrect:'+obs.text
-        assert '"very_far":["stained_glass","stained_glass","stained_glass","stained_glass","stained_glass","stained_glass","stained_glass","stained_glass","stained_glass"]' in obs.text, 'Vey far observation incorrect:'+obs.text
-
 # mission has ended.
 print("Mission over - feel free to explore the world.")
