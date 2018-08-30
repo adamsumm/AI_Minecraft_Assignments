@@ -49,7 +49,7 @@ The goal of this assignment is for you to:
 - Consider how /domain knowledge/ can help guide the development of AI algorithms, and the tension between generic and specialized approaches.
 
 Make sure your Python file for this assignment, =path_planning.py=, has these modules imported:
-
+ 
 #+BEGIN_SRC python
 from typing import Set, Dict, Tuple, Optional, Sequence, List
 import heapq

@@ -117,7 +117,8 @@ def solve_intprog(initial, goal, T):
         return sol_t,model
     else:
         print("No solution up to",T,"steps")
-        return math.inf,None
+        return math.inf, None
+
 #+END_SRC
 
 And to call it with increasing $T$:
@@ -226,7 +227,8 @@ def solve_intprog_compact(initial, goal, T):
         return sol_t,model
     else:
         print("No solution up to",T,"steps")
-        return math.inf,None
+        return math.inf, None
+
 #+END_SRC
 
 And again, we can call it with increasing $T$:
