@@ -6,8 +6,6 @@
 #+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
 #+TITLE: Minecraft AI Assignments (151 Edition)
 #+DATE: <2018-09-29>
-#+AUTHOR: Joseph C. Osborn
-#+EMAIL: joseph.osborn@pomona.edu
 #+LANGUAGE: en
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
@@ -22,7 +20,7 @@
               :base-extension "org"
               ;; Ignore any answers files
               :exclude "lp.org\\'"
-              :publishing-directory (concat minecraft-ai-path "html/")
+              :publishing-directory minecraft-ai-path
               :recursive t
               :publishing-function 'org-html-publish-to-html
               :headline-levels 4
@@ -36,7 +34,7 @@
               :base-extension "css\\'\\|js\\'\\|png\\'\\|jpeg\\'\\|jpg\\'\\|gif\\'\\|pdf\\'\\|mp3\\'\\|ogg\\'\\|swf\\'"
               ;; Leave out datasets and html folder (doesn't really work sadly)
               :exclude "Data\\|html"
-              :publishing-directory (concat minecraft-ai-path "html/")             
+              :publishing-directory minecraft-ai-path             
               :recursive t
               :publishing-function 'org-publish-attachment
               ))
@@ -49,31 +47,58 @@
 #+END_SRC
 
 #+RESULTS:
-| minecraft-assignments-org    | :base-directory | /Users/jcosborn/Projects/Courses/minecraft-assignments/  | :base-extension       | org                     | :exclude              | lp.org\'                                                     | :publishing-directory | /Users/jcosborn/Projects/Courses/minecraft-assignments/html/ | :recursive           | t                        | :publishing-function | org-html-publish-to-html | :headline-levels | 4        | :auto-preamble | t                                  | :header-args | (:exports code :eval never-export) |                                                              |            |   |                      |                        |
-| minecraft-assignments        | :components     | (minecraft-assignments-org minecraft-assignments-static) |                       |                         |                       |                                                              |                       |                                                              |                      |                          |                      |                          |                  |          |                |                                    |              |                                    |                                                              |            |   |                      |                        |
-| minecraft-assignments-static | :base-directory | /Users/jcosborn/Projects/Courses/minecraft-assignments/  | :base-extension       | css\'\                  | js\'\                 | png\'\                                                       | jpeg\'\               | jpg\'\                                                       | gif\'\               | pdf\'\                   | mp3\'\               | ogg\'\                   | swf\'            | :exclude | Data/*         | :exclude                           | html/*       | :publishing-directory              | /Users/jcosborn/Projects/Courses/minecraft-assignments/html/ | :recursive | t | :publishing-function | org-publish-attachment |
-| minecraft-assignments-org    | :base-directory | /Users/jcosborn/Projects/Courses/minecraft-assignments/  | :base-extension       | org                     | :publishing-directory | /Users/jcosborn/Projects/Courses/minecraft-assignments/html/ | :recursive            | t                                                            | :publishing-function | org-html-publish-to-html | :headline-levels     | 4                        | :auto-preamble   | t        | :header-args   | (:exports code :eval never-export) |              |                                    |                                                              |            |   |                      |                        |
-| dissertation                 | :base-directory | ~/Dropbox/Dissertation/                                  | :publishing-directory | ~/Dropbox/Dissertation/ | :publishing-function  | org-latex-publish-to-latex                                   | :completion-function  | jco/diss-to-overleaf                                         |                      |                          |                      |                          |                  |          |                |                                    |              |                                    |                                                              |            |   |                      |                        |
+| minecraft-assignments        | :components     | (minecraft-assignments-org minecraft-assignments-static) |                       |                         |                      |                            |                       |                                                         |            |        |                      |                          |                  |          |                |      |                       |                                                         |            |   |                      |                        |
+| minecraft-assignments-static | :base-directory | /Users/jcosborn/Projects/Courses/minecraft-assignments/  | :base-extension       | css\'\                  | js\'\                | png\'\                     | jpeg\'\               | jpg\'\                                                  | gif\'\     | pdf\'\ | mp3\'\               | ogg\'\                   | swf\'            | :exclude | Data\          | html | :publishing-directory | /Users/jcosborn/Projects/Courses/minecraft-assignments/ | :recursive | t | :publishing-function | org-publish-attachment |
+| minecraft-assignments-org    | :base-directory | /Users/jcosborn/Projects/Courses/minecraft-assignments/  | :base-extension       | org                     | :exclude             | lp.org\'                   | :publishing-directory | /Users/jcosborn/Projects/Courses/minecraft-assignments/ | :recursive | t      | :publishing-function | org-html-publish-to-html | :headline-levels |        4 | :auto-preamble | t    | :header-args          | (:exports code :eval never-export)                      |            |   |                      |                        |
+| dissertation                 | :base-directory | ~/Dropbox/Dissertation/                                  | :publishing-directory | ~/Dropbox/Dissertation/ | :publishing-function | org-latex-publish-to-latex | :completion-function  | jco/diss-to-overleaf                                    |            |        |                      |                          |                  |          |                |      |                       |                                                         |            |   |                      |                        |
+
+
+| Summary      | A large package of interesting projects in Minecraft-like domains and, sometimes, in Minecraft itself.  These assignments cover a broad variety of AI topics from path and task planning to recurrent CNNs.                                                                                                                                                                                                                                                                                                                   |
+| Topics       | Path planning, classical planning, linear programming, constraint satisfaction, SAT, Satisfiability Modulo Theories, machine learning, answer set programming, deep neural networks, convolutional neural networks, reinforcement learning                                                                                                                                                                                                                                                                                    |
+| Audience     | Upper division undergraduate students in a general AI course                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Difficulty   | Moderate to high, depending on how the assignments are broken up and how much sample code is provided                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Strengths    | Plenty of analytic as well as implementation work, interesting domain for students                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Weaknesses   | Each topic is covered in only as much depth as a week or two will allow.  Not all assignments are fully developed.                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Dependencies | Python examples are provided although Malmo should work with Java or C# as well.  A conda-based installation process is given which may or may not work out of the box on Windows (only the Malmo portion could pose difficulty).  Students should be familiar with graph search from algorithms coursework.  Python knowledge a plus but not strictly required.  Computational resources capable of training neural networks (i.e., with GPUs or with plenty of CPU time) could be necessary for the RL and CNN assignments. |
+| Variants     | This is just a sampling of possible assignments in the Minecraft domain, and we have purposely stayed far away from agent-based or expressive AI which each represent a productive area for more assignments.  These assignments can be given with more or less scaffolding and analytic content, in almost any order.  For the assignments with more complete writeups, we have tried to explain clearly what students will do and why they are doing it.                                              |
 
 This is my adaptation of the material developed by Adam Summerville and myself for doing significant, motivated AI programming assignments.
-It is specialized for my syllabus for Pomona's course CSCI 151 PO Artificial Intelligence.
+It is specialized for my syllabus for Pomona's course CSCI 151 PO Artificial Intelligence, but Pomona-specific references and assignment groupings can easily be expunged.
 
 Setting up the environment is detailed in [[file:setup.org][Setup]].
 
-The homework is split into six major assignments:
+Some of the assignments have partial or complete automated graders as well as narrative writeups with plenty of scaffolding.  By the end of the semester (by necessity) all the others will as well.
+
+The homework is split into seven major assignments:
 
 1. Path and task planning, in two parts:
   - [[file:Pathfinding/path-planning-four-ways.org][Path Planning Four Ways]]
   - [[file:CraftingPlanning/crafting-with-iw.org][Crafting with Iterative Widening]]
+  - Associated files:
+    - [[file:Pathfinding/terrain.txt]]
+    - [[file:Pathfinding/test_path_planning.py]]
+    - [[file:CraftingPlanning/crafting.json]]
 2. Linear programming with applications to metric task planning, also in two parts:
   - [[file:SchedulingLinProg/linprog_castle.org][Building a Castle with Linear Programming]]
   - [[file:SchedulingLinProg/intprog_planning.org][Integer Programming for Production Planning]]
+  - Associated files:
+    - [[file:SchedulingLinProg/crafting.json]]
 3. Machine learning with an application towards learning heuristics to guide search, in one part:
-  - [[file:CraftingRegressionEstimation/learning-heuristics.org][Learning Heuristics]]
+  - [[file:CraftingRegressionEstimation/regression.html][Learning Heuristics]]
+  - Associated files:
+    - [[file:CraftingRegressionEstimation/crafting_times.csv]]
 4. SAT/SMT for a logical framing of puzzles and planning problems, in two parts:
   - [[file:SATSMT/redstone.org][Redstone Puzzles]]
   - [[file:SATSMT/smt-planning.org][Planning via SMT]]
-5. Reinforcement learning for an agent to figure out crafting plans on its own, in one part:
+5. House generation via Answer Set Programming
+  - [[file:ASPHouseGeneration/HouseGeneration.html][ASP House Generation]]
+  - Associated files:
+    - [[file:ASPHouseGeneration/world_gen.lp]] 
+6. Reinforcement learning for an agent to figure out crafting plans on its own, in one part:
   - [[file:ReinforcementLearning/rl.org][Crafting Policies with Reinforcement Learning]]
-6. And convolutional recurrent neural networks to learn how to caption Minecraft screenshots, in one part:
+7. And convolutional recurrent neural networks to learn how to caption Minecraft screenshots, in one part:
   - [[file:ObserveAndCaption/caption.org][Generating Captions with Recurrent CNNs]]
+  - Associated files:
+    - [[file:Data.zip]]
+    - [[file:draw_and_caption.py]]
+    - [[file:MalmoUtils.py]] (Copyright Microsoft Research)

@@ -1,0 +1,29 @@
+#+OPTIONS: ':t *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:nil broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
+#+TITLE: Task and Path Planning with Reinforcement Learning
+#+DATE: <2018-08-23>
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 26.1 (Org mode 9.1.13)
+
+This assignment is the last time we'll look at task or path planning---phew!
+In this assignment, you will be implementing a reinforcement learning agent to accomplish the goal we approached more analytically in the SMT assignment.
+The key difference here is that rather thanw orking on a model of the game world, we will work on literal, actual Minecraft via the Malmo API.
+The support program will initialize, for each training episode, a Minecraft world with resources arranged in a particular way unknown to the agent.
+It is then the agent's job to find a movement and crafting /policy/ that gets it from an initial state to a goal condition.
+
+In this assignment you will:
+
+- Implement and evaluate a standard, tabular reinforcement learning method (temporal difference learning)
+- Generalize your algorithm using a deep neural network to approximate the value function
+
+The goal of this assignment is for you to understand:
+
+- How reinforcement learning incorporates an agent's experiences into its policy
+- Tradeoffs in building RL algorithms
+- Why approximation of the value function is key to more efficient training
+- How computational RL is like and unlike human or animal learning

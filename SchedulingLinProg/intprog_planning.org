@@ -5,8 +5,6 @@
 #+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
 #+TITLE: Integer Programming for Production Planning
 #+DATE: <2018-08-21 Tue>
-#+AUTHOR: Joseph C. Osborn
-#+EMAIL: joseph.osborn@pomona.edu
 #+LANGUAGE: en
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport

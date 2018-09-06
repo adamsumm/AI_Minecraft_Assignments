@@ -1,0 +1,34 @@
+#+OPTIONS: ':t *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:nil broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
+#+TITLE: Combined Task and Path Planning with SMT
+#+DATE: <2018-08-23>
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 26.1 (Org mode 9.1.13)
+
+Our plans so far have either concerned tasks or paths, and we used (perhaps not well-founded) abstractions to do away with details of movement when considering tasks.
+Let's revisit these two problems under one umbrella technique, /satisfiability modulo theories./
+In an SMT framework, it is straightforward to mix discrete Boolean satisfiability (as in the Redstone Puzzles exercise) with powerful numeric computation (as in our integer programming task planning exercise).
+We'll model this combined task as an /alternation/ of some movement followed by some crafting and/or gathering; key to this representation is that the avatar has a location in the world and crafting recipes may be contingent on location.
+We also have to locate a bench and a furnace (we'll stick with just one of each for now for simplicity in the enoding).
+
+This assignment synthesizes the integer programming formulation from earlier with information about path costs.
+However, it makes little sense to implement a pathfinding algorithm in propositional or even first-order SMT.
+Instead, we will first implement an all-pairs shortest paths algorithm over some slightly abstracted locations (the forest, the mountain, underground, et cetera).
+Then we can use those costs to help model the difficulty of movement through the world. 
+
+In this assignment, you will be using the Z3 SMT solver and its quantifier-free linear programming logic (plus boolean variables) to solve combined task and path planning problems similar to those posed before.
+This will involve some continuous variables modeling crafting or gathering time (as in the linear programming assignment) as well as discrete variables, and you will need to /generate/ the SMT encoding using a Python program (as we did with PuLP earlier).
+
+In this assignment you will:
+
+- Implement an all-pairs shortest paths algorithm
+- Represent the combined task and path planning problem in an SMT framework
+
+The goal of this assignment is for you to understand:
+
+- How to reason about constraint satisfaction where constraints come from several distinct theories

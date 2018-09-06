@@ -5,7 +5,6 @@
 #+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
 #+TITLE: Craft Planning with Iterative Widening
 #+DATE: <2018-08-23>
-#+AUTHOR: Joseph C. Osborn
 #+EMAIL: joseph.osborn@pomona.edu
 #+LANGUAGE: en
 #+SELECT_TAGS: export
@@ -46,7 +45,6 @@ import json
 from typing import NamedTuple, Dict, Tuple, Optional, Sequence, List
 import array
 import heapq
-import math
 import time
 import itertools
 
@@ -84,7 +82,7 @@ Let's reflect a little bit in =crafting.txt=.
 4. Look this up if you need to: What is the difference between a Python =List= of integers and a Python =array.array= of integers?
 
 Let's proceed by using the same data representation for an inventory state (as in =Initial=), a partial inventory state (as in =Goal=, =Produces=, and =Consumes=), and the inventory query posed by =Requires=.
-Because the speed of the inner loop is of supreme importance in graph search, we'll want to use an =array= of unsigned integers data representation for each of these.
+Because the speed of the inner loop is of supreme importance in graph search, we'll want to use an =array= of unsigned integers data representation for each of these (this may feel like premature optimization; email me if you want extra credit by comparing it with a simple dict-based representation).
 In order to go back and forth between item names and item indices, let's define a couple of global variables:
 
 #+BEGIN_SRC python
@@ -195,6 +193,22 @@ Let's reflect.
 
 In fact, we can consider any planning problem in terms of states and a transition relation between states and those actions which are valid in that state. 
 If we're thinking about path planning as search on the graph of possible locations (with edges given by a connectedness relation), task planning can be seen as search on the graph of possible states (with edges given by the state transition relation).
+Let's implement the transition relation now:
+
+#+BEGIN_SRC python
+
+def preconditions_satisfied(state: State, recipe: Recipe) -> bool:
+    # D. What needs to be true about state and recipe?
+    # Feel free to use State's >= method
+    return False
+
+def apply_effects(state: State, recipe: Recipe) -> State:
+    # E. How do you make a new state out of a state and a recipe?
+    # Note, DO NOT change state in-place!
+    return None
+
+
+#+END_SRC
 
 Let's try it.
 
@@ -203,11 +217,12 @@ Let's try it.
 8. [@8] Consider your implementation of Dijkstra's algorithm.  What would need to change so it works on states-and-actions instead of locations-and-directions?
 
 #+BEGIN_SRC python
-def plan_dijkstra(initial: State, goal: State) -> Tuple[int, int, Optional[List[str]]]:    
+def plan_dijkstra(initial: State, goal: State, limit:int) -> Tuple[int, int, Optional[List[str]]]:    
     start_time = time.time()
-    # D. Implement it here!  When you find a solution, print out the number of nodes visited and the time it took to get there.  If you don't find a solution, print out the number of nodes visited and the time it took to fail. 
+    # E. Implement it here!  When you find a solution, print out the number of nodes visited and the time it took to get there.  If you don't find a solution, print out the number of nodes visited and the time it took to fail. 
     # Feel free to use or modify the solution printing routine from the last exercise.
     # Return a tuple of (nodes_visited, -1, None) if no path exists, or else a tuple of (nodes_visited, cost, path) where path is a list of recipe names.
+    # You should also use limit to avoid visiting too many nodes before returning _something_.
     pass
 #+END_SRC
 
@@ -215,9 +230,11 @@ To try it out:
 #+BEGIN_SRC python
 # Example
 print(plan_dijkstra(State.from_dict({}),
-                    State.from_dict({'stone_pickaxe':1})))
-print(plan_dijkstra(State.from_dict({'wood':1}),
-                    State.from_dict({'ingot':1})))
+                    State.from_dict({'stone_pickaxe':1}),
+                    200000))
+print(plan_dijkstra(State.from_dict({'bench':1,'stone_pickaxe':1}),
+                    State.from_dict({'ingot':1}),
+                    200000))
 #+END_SRC  
 
 9. [@9] Imagine applying A* here.  What heuristic would you want to use?  Is that heuristic admissible?  Is that a problem?
@@ -235,7 +252,7 @@ Planning domains have some significant differences from general graph search pro
 Think about a recipe like making a stone pickaxe.
 Every possible planning state either satisfies its preconditions or doesn't.
 If this recipe were the only action, we could formulate the problem as a domain with just three /abstract/ states---one without a pickaxe and without the needed supplies, one without a pickaxe and with the needed supplies, and one with a pickaxe (and it doesn't matter what else is in the state).
-15. If we had a domain with just two recipes (/punch for wood/ and /wood planks/), what would be the abstract states in the sense uaed above?
+15. If we had a domain with just two recipes (/punch for wood/ and /wood planks/), what would be the abstract states in the sense used above?
 
 We can automate the intuition of (15) by transforming our states into /combinations of propositions./
 A /proposition/ here is a logical fact entailed by the state; for example "I have at least one piece of wood," "I have at least two pieces of wood," "I have at least one plank", and so on.
@@ -248,30 +265,33 @@ Returning to the problem of creating a stone pickaxe, any state which has a benc
 It also produces a propositions stating that we have a stone pickaxe.
 We need to know the full set of possibly interesting propositions in the world (for the purposes of applying recipes), so we want to accumulate both the propositions involved with making the recipe and its outputs.
 In order to know what all the combinations of propositions might be during planning, we need to all the individual propositions that might come up.
+We also need to be able to convert initial and goal states into sets of propositions, so we'll have a function to do that once we start our search algorithm: 
 
 #+BEGIN_SRC python
 class Proposition(NamedTuple):
     item: int
     at_least: int
 
+def state_propositions(state: State) -> Set[Proposition]:
+    propositions: Set[Proposition] = set()
+    # F. Do something for each item in state.  Output all propositions entailed by the state's contents
+    return propositions
+
+#+END_SRC
+
+
+#+BEGIN_SRC python
+# Now let's get the propositions from the recipes
+
 def recipe_propositions(recipe: Recipe) -> Set[Proposition]:
     propositions: Set[Proposition] = set()
-    # Do something with recipe.consumes, recipe.produces, and recipe.requires.
-    # Emit, for this recipe, all the propositions entailed by the preconditions AND by the postconditions.
+    # G. Do something with recipe.consumes, recipe.produces, and recipe.requires.
+    # Emit, for this recipe, all the propositions entailed by the postconditions and the _minimal_ set of propositions required for the preconditions (i.e., don't need to output wood >= 2, wood >= 1, wood >= 0 if the recipe needs 2 wood.)
     return propositions
 
 recipe_propositions = set()
 for r in recipes.values():
     recipe_propositions |= recipe_to_propositions(r)
-#+END_SRC
-
-We also need to be able to convert initial and goal states into sets of propositions, so we'll have a function to do that once we start our search algorithm: 
-
-#+BEGIN_SRC python
-def state_propositions(state: State) -> Set[Proposition]:
-    propositions: Set[Proposition] = set()
-    # Do something for each item in state.
-    return propositions
 #+END_SRC
 
 We can capture the notion of "ignoring states that are not different enough" by using the idea of a closed set from the cycle prevention techniques in graph search.
@@ -285,22 +305,35 @@ For example:
 - If $s$ has no unique combinations up to size $W$, we say it has infinite width (which we can write as just W+1, since we ignore states wider than $W$).
 - If the width of $s$ is greater than $W$, we do not add it to the open queue.
 
-Provided is a snippet that will check whether a state satisfies an iterable containing propositions (for example, a set representing a combination of propositions).
+Provided is a snippet that will check whether a state satisfies a set representing a combination of propositions.
 It will be useful in determining whether a state is novel.
 
 #+BEGIN_SRC python
-# Example
-satisfied = True
-for item,count in propositions:
-  if state[item] < count:
-    satisfied = False
+# Example, assuming propositions is a Set[Proposition]
+state_props:Set[Proposition] = state_propositions(state)
+if state_props.issuperset(propositions):
+    pass
+    # The state has this combination!
+else:
+    pass
+    # The state does not!
 #+END_SRC
 
 Now you are equipped to implement iterative widening search.
-For each instance of the search, you will want to keep track of all the witnessed combinations of propositions; if you can put an order on combinations (for example, the order in which they are generated) then you can use an array to represent this set.
-In this seen state array, each value tells whether the combination corresponding to its index has been seen before.
-To update this array, you will implement a function =see_state(s:State, combinations:List[Set[Proposition]], seen_combinations:array.array) -> bool= which will take in a state, a list of combinations (sets of Propositions), and the seen array and output whether any new combinations were witnessed in this state.
+For each instance of the search, you will want to keep track of all the witnessed combinations of propositions; this can be a set of sets (well, a set of =FrozenSets=, a Python type for an immutable set).
+To update this set, you will implement a function =see_state(s:State, combinations:List[FrozenSet[Proposition]], seen_combinations:Set[FrozenSet[Proposition]]) -> bool= which will take in a state, a list of combinations (sets of Propositions), and the seen set and output whether any new combinations were witnessed in this state.
 Note that one state might lead to the discovery of several new combinations.
+
+#+BEGIN_SRC python
+def see_state(state:State, combinations:List[Set[Proposition]], seen_combinations:Set[FrozenSet[Proposition]]) -> bool:
+    any_new = False
+    state_props = state_propositions(state)
+    for combo in combinations:
+        # H. Is this combination already in seen_combinations?
+        # I. If not, it's novel; so is this combination a subset of the state_props?
+        pass
+    return any_new
+#+END_SRC
 
 The outer loop of iterative widening gradually increases the bound $W$ up to a given $WMax$.
 The inner loop has the same skeleton as a standard graph search, with the exception that non-novel states are immediately thrown away.
@@ -310,38 +343,31 @@ Your search should return the sequence of actions required to reach a goal condi
 You also may want to print output describing how many nodes are visited and how much time has been taken for each value of $W$.
 
 #+BEGIN_SRC python
-def see_state(state:State, combinations:List[Set[Proposition]], seen_combinations:array.array) -> bool:
-    any_new = False
-    for index,combo in enumerate(all_combinations):
-        if False: # A. Check whether this combination occurs in seen_combinations
-            continue
-        combination_occurs = False
-        # B. Does this novel combination occur in this state?
-        if not combination_occurs:
-            # C. If it does not, what do you do then?
-            pass
-    return any_new
 
-def width_search(initial:State, goal:State, WMax:int) -> Optional[int, State, List[string]]:
+def plan_width(initial: State, goal: State, WMax: int) -> Tuple[int, int, Optional[List[str]]]:
+    start_time = time.time()
     all_propositions = recipe_propositions | state_propositions(initial) | state_propositions(goal)
-    all_combinations = []
+    all_combinations: List[FrozenSet[Proposition]] = []
     # Increase W up to WMax
-    for W in range(1,WMax):
-        # Calculate all combinations of propositions up to size W
-        all_combinations += [set(props) for props in itertools.combinations(all_propositions, W)]
+    for W in range(1, WMax + 1):
+        visited = 0
+        # Calculate all combinations of propositions at size W and add to all_combinations
+        all_combinations += [frozenset(props) for props in itertools.combinations(all_propositions, W)]
+        # Sanity check that this is 6279 for W=3, for example
+        print("W=",W,"Combination count=",len(all_combinations))
         # Track, for each combination (by index), whether we have seen this combination before (0 for no, >0 for yes)
-        seen_combinations = array.array('B', [0 for combo in all_combinations])
+        seen_combinations: Set[FrozenSet[Proposition]] = set()
         # Initialize seen_combinations
-        see_state(initial, all_combinations, seen_combinations))
-        open_list:List[Tuple[int,State]] = [(0, initial)]
-        best_costs:Dict[State, Tuple[int, State]] = {initial:(0, initial)} 
-        # D. Any other setup you may need for the search
+        see_state(initial, all_combinations, seen_combinations)
+        open_list: List[Tuple[int, State]] = [(0, initial)]
+        best_costs: Dict[State, int] = {initial: 0}
+        best_from: Dict[State, List[str]] = {initial: []}
         while open_list:
-            # E. This should look like your graph search, except...
-            # Call see_state on newly expanded states to update seen_combinations and use its return value to decide whether to add the next n
-            pass
-    return None
-
+            cost, state = heapq.heappop(open_list)
+            visited += 1
+            # I. This should look like your graph search (Dijkstra's is a nice choice), except...
+            # Call see_state on newly expanded states to update seen_combinations and use its return value to decide whether to add this state to the open list (is that the only thing that determines whether it should go on the open list?)
+    return visited, -1, None
 #+END_SRC
 
 Try it out like so:
@@ -356,9 +382,9 @@ print(width_search({},{'rail':1},4))
 print(width_search({},{'cart':1},4))
 #+END_SRC
 
-16. [@16] What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit and how long does it take exactly?
+16. [@16] What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit at its deepest $W$ level, how high does $WMax$ have to be, and how long does it take in seconds
 17. How does increasing or decreasing the value of $WMax$ change the time to find a solution, or: what sorts of craft planning situations benefit from increasing $WMax$? 
-18. Is iterative widening guaranteed to give optimal solutions for this problem?  In other words, does there exist a crafting problem where a width bound of $w$ gives a suboptimal solution while $w+1$ gives a better one?
+18. Is iterative widening guaranteed to give optimal solutions for this problem?  In other words, does there exist a crafting problem where a width bound of $w$ gives a suboptimal solution while $w+1$ gives a better one?  What does this mean for implementing your algorithm---where can you take shortcuts to get better performance if you already lost optimality, or can you not take such shortcuts?
 19. Can you think of a way to apply iterative widening to the path planning problem?  Do you think it would perform better than A* there or worse?  Why?
 
 Submit your Python files and reflections, and take a well-deserved rest!

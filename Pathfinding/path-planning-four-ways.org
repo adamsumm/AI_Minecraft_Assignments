@@ -5,8 +5,6 @@
 #+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
 #+TITLE: Path Planning Four Ways
 #+DATE: <2018-08-29>
-#+AUTHOR: Joseph C. Osborn
-#+EMAIL: joseph.osborn@pomona.edu
 #+LANGUAGE: en
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
@@ -27,7 +25,7 @@ You may have encountered some of these algorithms in previous classes, since gra
 If not, don't worry!
 In this course, assignments include a series of /reflections/ intended to help you develop the insights required to implement the assignment.
 Let's begin with a reflection to practice. 
-Type your answers (with the question numbers) into =path_planning.txt=.
+[>1;95;0cType] your answers (with the question numbers) into =path_planning.txt=.
 
 1. In your own words, what is a /graph/ in the discrete mathematics/computer science sense?  How might you represent a graph using data structures in a computer program?  Pseudo-code is fine.
 2. Have you encountered any of the above algorithms before?
@@ -56,6 +54,9 @@ import heapq
 import math
 import time
 #+END_SRC
+
+#+RESULTS:
+: None
 
 Let's begin by loading a map into a two-dimensional array of unicode characters (specifically, emoji).
 We are using Python 3 and annotating types wherever we can.
@@ -131,11 +132,11 @@ def pretty_print_path(terrain: Map, path: List[Point]):
         output.append(row_str)
     return '\\n'.join(output)
 
-def print_search_result(result:Tuple[int, int, Optional[List[Point]]]) -> None:
+def print_search_result(terrain:Map, result:Tuple[int, int, Optional[List[Point]]]) -> None:
     print("Visited:",result[0])
     if result[2]:
         print("Best path cost:",result[1])
-        print(pretty_print_path(result[2]))
+        print(pretty_print_path(terrain, result[2]))
     else:
         print("No path found")
 
@@ -159,7 +160,7 @@ Feel free to modify the test file as you like to add tests, try out new examples
 def breadth_first(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
     open_list: List[Point] = [start]
     # We'll treat start specially
-    best_costs: Dict[int, Point] = {start:(0, start)}
+    best_costs: Dict[Point, Tuple[int, Point]] = {start:(0, start)}
     visit_count = 0
     while open_list:
         # Breadth-first search takes the first thing from the list...
@@ -181,10 +182,11 @@ Try it out with a few different coordinate pairs:
 #+BEGIN_SRC python
 # Example
 terrain = load_map('terrain.txt')
-print_search_result(breadth_first(terrain, (0, 0), (10, 0)))
-print_search_result(breadth_first(terrain, (2, 3), (7, 0)))
-print_search_result(breadth_first(terrain, (5, 5), (0, 1)))
-print_search_result(breadth_first(terrain, (0, 0), (11, 10)))
+print_search_result(terrain, breadth_first(terrain, (0, 0), (10, 0)))
+print_search_result(terrain, breadth_first(terrain, (2, 3), (7, 0)))
+print_search_result(terrain, breadth_first(terrain, (5, 5), (0, 1)))
+print_search_result(terrain, breadth_first(terrain, (0, 0), (10, 9)))
+print_search_result(terrain, breadth_first(terrain, (0, 0), (11, 10))) # out of bounds!
 #+END_SRC
 
 10. [@10] Is the first path found by best-first search guaranteed to be cost-optimal?  Step-optimal?  Is the overall result of best-first search guaranteed to be cost-optimal?
@@ -197,7 +199,7 @@ As you may have noticed in your reflection, the search state must now include th
 #+BEGIN_SRC python
 def dijkstra(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
     open_list: List[Tuple[int, Point]] = [(0, start)]
-    best_costs: Dict[int, Point] = {start:(0, start)}
+    best_costs: Dict[Point, Tuple[int, Point]] = {start:(0, start)}
     visit_count = 0
     while open_list:
         # Dijkstra's search uses the priority queue data structure
@@ -246,10 +248,10 @@ def best_first(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional
     # In the open list we use heuristic values as the priority
     open_list: List[Tuple[int, Point]] = [(manhattan_distance(start, goal), start)]
     # But in best_costs we still want to track real costs
-    best_costs: Dict[int, Point] = {start:(0, start)}
+    best_costs: Dict[Point, Tuple[int, Point]] = {start:(0, start)}
     visit_count = 0
     while open_list:
-        cost, node = heapq.heappop(open_list)
+        _h, node = heapq.heappop(open_list)
         visit_count += 1
         neighbors = find_neighbors(terrain, node)
         for neighbor, neighbor_cost in neighbors:
@@ -273,10 +275,10 @@ def astar(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List
     # G. What do we use as priority values in the open list? 
     open_list: List[Tuple[int, Point]] = [(?, start)]
     # In best_costs we still want to track real costs
-    best_costs: Dict[int, Point] = {start:(0, start)}
+    best_costs: Dict[Point, Tuple[int, Point]] = {start:(0, start)}
     visit_count = 0
     while open_list:
-        cost, node = heapq.heappop(open_list)
+        _f, node = heapq.heappop(open_list)
         visit_count += 1
         neighbors = find_neighbors(terrain, node)
         for neighbor, neighbor_cost in neighbors:
@@ -300,5 +302,5 @@ A* has interesting behavior with inadmissible heuristics, generally finding solu
 There is a deep literature in tweaks on A* for different domains and applications, including replanning (finding a new path after the path we've been following becomes invalid), anytime planning (getting a suboptimal solution quickly but improving the plan over time), and many other areas.  
 Some approaches like jump-point search or \theta* try to further minimize the number of nodes examined by taking advantage of structural details of top-down path planning.
 
-Now that you're all done with this, you're ready for /task planning./  
+Now that you're all done with this, you're ready for /task planning./
 Proceed to "Craft Planning with Iterative Widening."
