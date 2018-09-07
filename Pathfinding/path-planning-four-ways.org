@@ -164,7 +164,7 @@ def breadth_first(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optio
     visit_count = 0
     while open_list:
         # Breadth-first search takes the first thing from the list...
-        cost, node = open_list.pop(0)
+        node = open_list.pop(0)
         visit_count += 1
         neighbors = find_neighbors(terrain, node)
         for neighbor, neighbor_cost in neighbors:
