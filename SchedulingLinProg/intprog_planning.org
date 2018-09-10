@@ -154,39 +154,34 @@ Here, ILP has an important advantage over width- or SAT-based planning, which is
 
 We saw that for problems where $T$ stayed small, the solver worked great.
 Unfortunately our /encoding/ needed to increase $T$ for every additional crafting step.
-Take a moment to reflect in =intprog_crafting_compact.txt=.
+Take a moment to reflect in =intprog_crafting.txt=.
 Modeling this problem gets quite subtle so its important to think about the space of possible encodings (and Python programs generating those encodings) before moving forward---doing these reflections first is strongly recommended and will make the assignment much easier.
 
-1. Since ILP problems need /compact/ encodings to be efficiently solvable, and each timestep adds a bunch more repetitive variables and constraints (and tricky chained time-dependencies), what can we do to reduce the number of timesteps we need?
+12. [@12] Since ILP problems need /compact/ encodings to be efficiently solvable, and each timestep adds a bunch more repetitive variables and constraints (and tricky chained time-dependencies), what can we do to reduce the number of timesteps we need?
 
 When we play Minecraft, we rarely hop back and forth between gathering and crafting tasks, so one approach might be to model that by applying the /same/ recipe multiple times in one tick.
 Another could have us applying multiple different recipes concurrently, provided they do not conflict on their required inputs.
 
-2. [@2] How do we need to change our decision variables to account for these improvements?
+13. [@13] How do we need to change our decision variables to account for these improvements?
 
 The most straightforward way is to change the zero/one binary pick variables to arbitrary integer variables greater than zero, and to eliminate the restriction that the sum of pick variables is one.
 
-3. [@3] If we made this alteration, how would the constraints relating the current inventory to the previous inventory need to change?
-4. How about the constraints around =Consumes=?
-5. And, in plain language, how would the constraints on =Requires= need to change?
+14. [@14] If we made this alteration, how would the constraints relating the current inventory to the previous inventory need to change?
+15. How about the constraints around =Consumes=?
+16. And, in plain language, how would the constraints on =Requires= need to change?
 
 The key issue for our =Requires= constraints is that just multiplying by pick will mean we need e.g. ten furnaces to smelt ten ingots in a row.
 It seems like we need a way to "cast" the integer describing how many times we execute a given recipe into a boolean zero or one, or at least to bring the range of some expression involving the pick variable between zero and one.
 For this it might help to put an upper bound on how many times any individual recipe can be executed within a single instant.
 
-6. [@6] In a formal notation, what will the constraints on =Requires= terms for recipes look like now?
+17. [@17] In a formal notation, what will the constraints on =Requires= terms for recipes look like now?
 
-Let's give it a try in =intprog_crafting_compact.py=.
-The automatic tests for this module are in =test_intprog_crafting_compact.py=.
-You can run them with =python test_intprog_crafting_compact.py=.
+Let's give it a try in =intprog_crafting.py=.
+The automatic tests for this module are in =test_intprog_crafting.py=.
+You can run them with =python test_intprog_crafting.py=.
 Feel free to modify this file as you like to add tests, try out new examples, and so on.
 
 #+BEGIN_SRC python
-import pulp
-import json
-import time
-import math
-
 def solve_intprog_compact(initial, goal, T):
     start_time = time.time()
     problem = pulp.LpProblem("Crafting ILP",pulp.LpMinimize)
@@ -250,11 +245,15 @@ if solve_intprog_compact(initial,goal,5)[0] == math.inf:
 The performance characteristics of this approach are radically different.
 Take some time to compare against your initial ILP implementation and against the iterative widening algorithm from before; then reflect on the following questions.
 
-7. [@7] Try this algorithm with different combinations of initial and goal states.  How does performance vary with the number of distinct items, the number of items total, and the length of the dependency chain involved in creating the items?
-8. What's the largest crafting problem you can think of that your algorithm can solve within 20 seconds?
-9. What is the exact meaning of "an optimal solution" for a given execution of this planning algorithm, and how does this definition relate to the total duration of the plan and the number of steps $T$?  Is there anything surprising about the plans that come out?
-10. In plain language (but in some detail), how would you change this encoding to handle multiple (say, integer $K$) agents acting in parallel, such that every recipe executed at a given timestep must be executed by exactly one agent and that enough of the =Requires= (furnaces, tools, etc) are available for each agent to do the work?  What might the decision variables, constraints, and optimality criterion be? 
-11. Are there Minecraft planning problems for which it's better to use the iterative widening planner versus the ILP planner?
-12. Can you name two different planning domains outside of Minecraft, one where iterative widening should do better and one where ILP should do better?
+18. [@18] Try this algorithm with different combinations of initial and goal states.  How does performance vary with the number of distinct items, the number of items total, and the length of the dependency chain involved in creating the items?
+19. What's the largest crafting problem you can think of that your algorithm can solve within 20 seconds?
+20. What is the exact meaning of "an optimal solution" for a given execution of this planning algorithm, and how does this definition relate to the total duration of the plan and the number of steps $T$?  Is there anything surprising about the plans that come out?
+21. In plain language (but in some detail), how would you change this encoding to handle multiple (say, integer $K$) agents acting in parallel, such that every recipe executed at a given timestep must be executed by exactly one agent and that enough of the =Requires= (furnaces, tools, etc) are available for each agent to do the work?  What might the decision variables, constraints, and optimality criterion be?
+22. Are there Minecraft planning problems for which it's better to use the iterative widening planner versus the ILP planner?
+23. Can you name two different planning domains outside of Minecraft, one where iterative widening should do better and one where ILP should do better?
 
-Submit your Python files and reflections, then take a well-deserved rest!
+*************** TODO add a reflection about relaxing the above to not enforce any time steps, could that be used as a heuristic for another planner? :noexport:
+*************** END
+
+
+Commit your Python files and reflections, then take a well-deserved rest!

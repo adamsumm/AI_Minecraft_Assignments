@@ -4,10 +4,11 @@ import time
 score = [0, 0]
 point_status = False
 
-# Thanks to https://stackoverflow.com/a/287944
+# TODO test get_neighbors too
 
 
 class bcolors:
+    # Thanks to https://stackoverflow.com/a/287944
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
