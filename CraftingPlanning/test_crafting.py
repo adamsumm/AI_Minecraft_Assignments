@@ -1,4 +1,4 @@
-from crafting_answer import recipes, plan_dijkstra, plan_width, State
+from crafting import recipes, plan_dijkstra, plan_width, State
 
 import time
 
@@ -109,12 +109,10 @@ def expect_nearly(v1, v2, fraction, explanation):
 
 print("Dijkstra make stone pickaxe")
 visited, cost, path, dt = run_trial(plan_dijkstra, 300000, State.from_dict({}), State.from_dict({'stone_pickaxe': 1}))
-expect_nearly(visited, 689, 0.2, "Visit count")
 expect_exactly(cost, 31, "Optimal plan cost")
 expect_path(path, 31, ['punch for wood', 'craft plank', 'punch for wood', 'craft plank', 'punch for wood', 'craft plank', 'craft bench', 'craft stick', 'craft wooden_pickaxe at bench', 'wooden_pickaxe for cobble', 'wooden_pickaxe for cobble', 'wooden_pickaxe for cobble', 'craft stone_pickaxe at bench'], "Optimal path")
 print("Dijkstra make ingot given bench, pickaxe")
 visited, cost, path, dt = run_trial(plan_dijkstra, 100000, State.from_dict({'bench': 1, 'stone_pickaxe': 1}), State.from_dict({'ingot': 1}))
-expect_nearly(visited, 20277, 0.2, "Visit count")
 expect_exactly(cost, 28, "Optimal plan cost")
 expect_path(path, 28, ['stone_pickaxe for cobble', 'stone_pickaxe for cobble', 'stone_pickaxe for cobble', 'stone_pickaxe for cobble', 'stone_pickaxe for cobble', 'stone_pickaxe for cobble', 'stone_pickaxe for cobble', 'stone_pickaxe for cobble', 'craft furnace at bench', 'stone_pickaxe for coal', 'stone_pickaxe for ore', 'smelt ore in furnace'], "Optimal path")
 
@@ -124,7 +122,6 @@ visited, cost, path, dt = run_trial(plan_width,
                                     4,
                                     State.from_dict({}),
                                     State.from_dict({'stone_pickaxe': 1}))
-expect_nearly(visited, 70, 0.2, "Visit count")
 expect_nearly(cost, 31, 0.1, "Path length")
 print("Widening make ingot given bench")
 visited, cost, path, dt = run_trial(plan_width,
@@ -132,21 +129,18 @@ visited, cost, path, dt = run_trial(plan_width,
                                     State.from_dict({'bench': 1}),
                                     State.from_dict({'ingot': 1}))
 
-expect_nearly(visited, 443, 0.1, "Visit count")
 expect_exactly(cost, 55, "Path length")
 print("Widening make iron pickaxe")
 visited, cost, path, dt = run_trial(plan_width,
                                     4,
                                     State.from_dict({}),
                                     State.from_dict({'iron_pickaxe': 1}))
-expect_nearly(visited, 649, 0.1, "Visit count")
 expect_nearly(cost, 89, 0.1, "Path length")
 print("Widening make cart")
 visited, cost, path, dt = run_trial(plan_width,
                                     4,
                                     State.from_dict({}),
                                     State.from_dict({'cart': 1}))
-expect_nearly(visited, 1045, 0.1, "Visit count")
 expect_nearly(cost, 114, 0.1, "Path length")
 
 print("Widening make rail")
@@ -154,5 +148,4 @@ visited, cost, path, dt = run_trial(plan_width,
                                     4,
                                     State.from_dict({}),
                                     State.from_dict({'rail': 1}))
-expect_nearly(visited, 1240, 0.1, "Visit count")
 expect_nearly(cost, 128, 0.1, "Path length")

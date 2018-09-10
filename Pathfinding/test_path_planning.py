@@ -114,28 +114,24 @@ t = load_map('terrain.txt')
 
 print("BFS (0,0) -> (10,0)")
 visited, cost, path, dt = run_trial(t, breadth_first, (0, 0), (10, 0))
-expect_nearly(visited, 189, 0.1, "Visit count")
 expect_exactly(cost, 13, "Optimal path cost")
 expect_path(path, t, 13, (0, 0), (10, 0), [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0)], "Optimal path")
 p1_bfs_cost = cost
 p1_bfs_visited = visited
 print("BFS (2,3) -> (7,0)")
 visited, cost, path, dt = run_trial(t, breadth_first, (2, 3), (7, 0))
-expect_nearly(visited, 229, 0.1, "Visit count")
 expect_exactly(cost, 10, "Optimal path cost")
 expect_path(path, t, 10, (2, 3), (7, 0), [(2, 3), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (6, 1), (6, 0), (7, 0)], "Optimal path")
 p2_bfs_cost = cost
 p2_bfs_visited = visited
 print("BFS (5,5) -> (0,1)")
 visited, cost, path, dt = run_trial(t, breadth_first, (5, 5), (0, 1))
-expect_nearly(visited, 169, 0.1, "Visit count")
 expect_exactly(cost, 17, "Optimal path cost")
 expect_path(path, t, 17, (5, 5), (0, 1), [(5, 5), (5, 4), (5, 3), (5, 2), (4, 2), (3, 2), (2, 2), (1, 2), (0, 2), (0, 1)], "Optimal path")
 p3_bfs_cost = cost
 p3_bfs_visited = visited
 print("BFS (0,0) -> (10,9)")
 visited, cost, path, dt = run_trial(t, breadth_first, (0, 0), (10, 9))
-expect_nearly(visited, 189, 0.1, "Visit count")
 expect_exactly(cost, 21, "Optimal path cost")
 expect_path(path, t, 21, (0, 0), (10, 9), [(0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9), (9, 9), (10, 9)], "Optimal path")
 p4_bfs_cost = cost
@@ -143,7 +139,6 @@ p4_bfs_visited = visited
 
 print("BFS (0,0) -> (0,9)")
 visited, cost, path, dt = run_trial(t, breadth_first, (0, 0), (0, 9))
-expect_nearly(visited, 189, 0.1, "Visit count")
 expect_exactly(cost, 26, "Optimal path cost")
 expect_path(path, t, 26, (0, 0), (0, 9), [(0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9), (7, 9), (6, 9), (5, 9), (4, 9), (3, 9), (2, 9), (1, 9), (0, 9)], "Optimal path")
 p5_bfs_cost = cost
@@ -151,7 +146,6 @@ p5_bfs_visited = visited
 
 print("BFS (0,0) -> (11,10) (should find no path)")
 visited, cost, path, dt = run_trial(t, breadth_first, (0, 0), (11, 10))
-expect_nearly(visited, 189, 0.1, "Visit count")
 expect_exactly(path, None, "No path")
 p6_bfs_cost = cost
 p6_bfs_visited = visited
@@ -160,42 +154,36 @@ print("------------------------")
 
 print("Dijkstra (0,0) -> (10,0)")
 visited, cost, path, dt = run_trial(t, dijkstra, (0, 0), (10, 0))
-expect_nearly(visited, 43, 0.1, "Visit count")
 expect_exactly(cost, 13, "Optimal path cost")
 expect_path(path, t, 13, (0, 10), (10, 0), [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0)], "Optimal path")
 p1_dijkstra_cost = cost
 p1_dijkstra_visited = visited
 print("Dijkstra (2,3) -> (7,0)")
 visited, cost, path, dt = run_trial(t, dijkstra, (2, 3), (7, 0))
-expect_nearly(visited, 38, 0.1, "Visit count")
 expect_exactly(cost, 10, "Optimal path cost")
 expect_path(path, t, 10, (2, 3), (7, 0), [(2, 3), (2, 2), (2, 1), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0)], "Optimal path")
 p2_dijkstra_cost = cost
 p2_dijkstra_visited = visited
 print("Dijkstra (5,5) -> (0,1)")
 visited, cost, path, dt = run_trial(t, dijkstra, (5, 5), (0, 1))
-expect_nearly(visited, 61, 0.1, "Visit count")
 expect_exactly(cost, 17, "Optimal path cost")
 expect_path(path, t, 17, (5, 5), (0, 1), [(5, 5), (5, 4), (5, 3), (5, 2), (4, 2), (3, 2), (2, 2), (1, 2), (0, 2), (0, 1)], "Optimal path")
 p3_dijkstra_cost = cost
 p3_dijkstra_visited = visited
 print("Dijkstra (0,0) -> (10,9)")
 visited, cost, path, dt = run_trial(t, dijkstra, (0, 0), (10, 9))
-expect_nearly(visited, 82, 0.1, "Visit count")
 expect_exactly(cost, 21, "Optimal path cost")
 expect_path(path, t, 21, (0, 0), (10, 9), [(0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9), (9, 9), (10, 9)], "Optimal path")
 p4_dijkstra_cost = cost
 p4_dijkstra_visited = visited
 print("Dijkstra (0,0) -> (0,9)")
 visited, cost, path, dt = run_trial(t, dijkstra, (0, 0), (0, 9))
-expect_nearly(visited, 102, 0.2, "Visit count")
 expect_exactly(cost, 26, "Optimal path cost")
 expect_path(path, t, 26, (0, 0), (0, 9), [(0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9), (7, 9), (6, 9), (5, 9), (4, 9), (3, 9), (2, 9), (1, 9), (0, 9)], "Optimal path")
 p5_dijkstra_cost = cost
 p5_dijkstra_visited = visited
 print("Dijkstra (0,0) -> (11,10) (should find no path)")
 visited, cost, path, dt = run_trial(t, dijkstra, (0, 0), (11, 10))
-expect_nearly(visited, 120, 0.2, "Visit count")
 expect_exactly(path, None, "No path")
 p6_dijkstra_cost = cost
 p6_dijkstra_visited = visited
@@ -204,42 +192,36 @@ print("------------------------")
 
 print("Best_First (0,0) -> (10,0)")
 visited, cost, path, dt = run_trial(t, best_first, (0, 0), (10, 0))
-expect_nearly(visited, 10, 0.1, "Visit count")
 expect_exactly(cost, 13, "Optimal path cost...?")
 expect_path(path, t, 13, (0, 0), (10, 0), [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0)], "Optimal path...?")
 p1_best_first_cost = cost
 p1_best_first_visited = visited
 print("Best_First (2,3) -> (7,0)")
 visited, cost, path, dt = run_trial(t, best_first, (2, 3), (7, 0))
-expect_nearly(visited, 8, 0.1, "Visit count")
 expect_exactly(cost, 10, "Optimal path cost...?")
 expect_path(path, t, 10, (2, 3), (7, 0), [(2, 3), (2, 2), (2, 1), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0)], "Optimal path...?")
 p2_best_first_cost = cost
 p2_best_first_visited = visited
 print("Best_First (5,5) -> (0,1)")
 visited, cost, path, dt = run_trial(t, best_first, (5, 5), (0, 1))
-expect_nearly(visited, 9, 0.1, "Visit count")
 expect_exactly(cost, 33, "Optimal path cost...?")
 expect_path(path, t, 33, (5, 5), (0, 1), [(5, 5), (4, 5), (3, 5), (2, 5), (1, 5), (0, 5), (0, 4), (0, 3), (0, 2), (0, 1)], "Optimal path...?")
 p3_best_first_cost = cost
 p3_best_first_visited = visited
 print("Best_First (0,0) -> (10,9)")
 visited, cost, path, dt = run_trial(t, best_first, (0, 0), (10, 9))
-expect_nearly(visited, 19, 0.1, "Visit count")
 expect_exactly(cost, 40, "Optimal path cost...?")
 expect_path(path, t, 40, (0, 0), (10, 9), [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 9), (1, 9), (2, 9), (3, 9), (4, 9), (5, 9), (6, 9), (7, 9), (8, 9), (9, 9), (10, 9)], "Optimal path...?")
 p4_best_first_cost = cost
 p4_best_first_visited = visited
 print("Best_First (0,0) -> (0,9)")
 visited, cost, path, dt = run_trial(t, best_first, (0, 0), (0, 9))
-expect_nearly(visited, 9, 0.1, "Visit count")
 expect_exactly(cost, 29, "Optimal path cost...?")
 expect_path(path, t, 29, (0, 0), (0, 9), [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 9)], "Optimal path...?")
 p5_best_first_cost = cost
 p5_best_first_visited = visited
 print("Best_First (0,0) -> (11,10) (should find no path)")
 visited, cost, path, dt = run_trial(t, best_first, (0, 0), (11, 10))
-expect_nearly(visited, 974, 0.1, "Visit count")
 expect_exactly(path, None, "No path")
 p6_best_first_cost = cost
 p6_best_first_visited = visited
@@ -248,42 +230,36 @@ print("------------------------")
 
 print("Astar (0,0) -> (10,0)")
 visited, cost, path, dt = run_trial(t, astar, (0, 0), (10, 0))
-expect_nearly(visited, 18, 0.1, "Visit count")
 expect_exactly(cost, 13, "Optimal path cost")
 expect_path(path, t, 13, (0, 0), (10, 0), [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0)], "Optimal path")
 p1_astar_cost = cost
 p1_astar_visited = visited
 print("Astar (2,3) -> (7,0)")
 visited, cost, path, dt = run_trial(t, astar, (2, 3), (7, 0))
-expect_nearly(visited, 22, 0.1, "Visit count")
 expect_exactly(cost, 10, "Optimal path cost")
 expect_path(path, t, 10, (2, 3), (7, 0),  [(2, 3), (2, 2), (2, 1), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0)], "Optimal path")
 p2_astar_cost = cost
 p2_astar_visited = visited
 print("Astar (5,5) -> (0,1)")
 visited, cost, path, dt = run_trial(t, astar, (5, 5), (0, 1))
-expect_nearly(visited, 15, 0.1, "Visit count")
 expect_exactly(cost, 17, "Optimal path cost")
 expect_path(path, t, 17, (5, 5), (0, 1), [(5, 5), (5, 4), (5, 3), (5, 2), (4, 2), (3, 2), (2, 2), (1, 2), (0, 2), (0, 1)], "Optimal path")
 p3_astar_cost = cost
 p3_astar_visited = visited
 print("Astar (0,0) -> (10,9)")
 visited, cost, path, dt = run_trial(t, astar, (0, 0), (10, 9))
-expect_nearly(visited, 39, 0.1, "Visit count")
 expect_exactly(cost, 21, "Optimal path cost")
 expect_path(path, t, 21, (0, 0), (10, 9), [(0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9), (9, 9), (10, 9)], "Optimal path")
 p4_astar_cost = cost
 p4_astar_visited = visited
 print("Astar (0,0) -> (0,9)")
 visited, cost, path, dt = run_trial(t, astar, (0, 0), (0, 9))
-expect_nearly(visited, 59, 0.1, "Visit count")
 expect_exactly(cost, 26, "Optimal path cost")
 expect_path(path, t, 26, (0, 0), (0, 9), [(0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9), (7, 9), (6, 9), (5, 9), (4, 9), (3, 9), (2, 9), (1, 9), (0, 9)], "Optimal path")
 p5_astar_cost = cost
 p5_astar_visited = visited
 print("Astar (0,0) -> (11,10) (should find no path)")
 visited, cost, path, dt = run_trial(t, astar, (0, 0), (11, 10))
-expect_nearly(visited, 124, 0.1, "Visit count")
 expect_exactly(path, None, "No path")
 p6_astar_cost = cost
 p6_astar_visited = visited

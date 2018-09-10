@@ -51,7 +51,7 @@ import itertools
 with open('Crafting.json') as f:
     Crafting = json.load(f)
 #+END_SRC python
-
+k
 You may want to try printing out some different information from =Crafting= to get a feel for its schema:
 
 #+BEGIN_SRC python
@@ -216,6 +216,9 @@ Let's try it.
 
 8. [@8] Consider your implementation of Dijkstra's algorithm.  What would need to change so it works on states-and-actions instead of locations-and-directions?
 
+*************** TODO Next time, do DFS instead of Dijkstra.        :noexport:
+*************** END
+ 
 #+BEGIN_SRC python
 def plan_dijkstra(initial: State, goal: State, limit:int) -> Tuple[int, int, Optional[List[str]]]:    
     start_time = time.time()
@@ -223,6 +226,7 @@ def plan_dijkstra(initial: State, goal: State, limit:int) -> Tuple[int, int, Opt
     # Feel free to use or modify the solution printing routine from the last exercise.
     # Return a tuple of (nodes_visited, -1, None) if no path exists, or else a tuple of (nodes_visited, cost, path) where path is a list of recipe names.
     # You should also use limit to avoid visiting too many nodes before returning _something_.
+    # Finally, you can check whether a State _satisfies_ a goal by checking `state >= goal` 
     pass
 #+END_SRC
 
@@ -286,7 +290,7 @@ def state_propositions(state: State) -> Set[Proposition]:
 def recipe_propositions(recipe: Recipe) -> Set[Proposition]:
     propositions: Set[Proposition] = set()
     # G. Do something with recipe.consumes, recipe.produces, and recipe.requires.
-    # Emit, for this recipe, all the propositions entailed by the postconditions and the _minimal_ set of propositions required for the preconditions (i.e., don't need to output wood >= 2, wood >= 1, wood >= 0 if the recipe needs 2 wood.)
+    # Emit, for this recipe, all the propositions entailed by the preconditions and the _minimal_ set of propositions embodied in the preconditions (i.e., don't need to output wood >= 2, wood >= 1, wood >= 0 if the recipe creates 2 wood.)
     return propositions
 
 recipe_propositions = set()
@@ -343,7 +347,6 @@ Your search should return the sequence of actions required to reach a goal condi
 You also may want to print output describing how many nodes are visited and how much time has been taken for each value of $W$.
 
 #+BEGIN_SRC python
-
 def plan_width(initial: State, goal: State, WMax: int) -> Tuple[int, int, Optional[List[str]]]:
     start_time = time.time()
     all_propositions = recipe_propositions | state_propositions(initial) | state_propositions(goal)
@@ -368,6 +371,7 @@ def plan_width(initial: State, goal: State, WMax: int) -> Tuple[int, int, Option
             # I. This should look like your graph search (Dijkstra's is a nice choice), except...
             # Call see_state on newly expanded states to update seen_combinations and use its return value to decide whether to add this state to the open list (is that the only thing that determines whether it should go on the open list?)
     return visited, -1, None
+
 #+END_SRC
 
 Try it out like so:
