@@ -51,7 +51,7 @@ import itertools
 with open('Crafting.json') as f:
     Crafting = json.load(f)
 #+END_SRC python
-k
+
 You may want to try printing out some different information from =Crafting= to get a feel for its schema:
 
 #+BEGIN_SRC python

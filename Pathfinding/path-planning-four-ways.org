@@ -27,7 +27,7 @@ You may have encountered some of these algorithms in previous classes, since gra
 If not, don't worry!
 In this course, assignments include a series of /reflections/ intended to help you develop the insights required to implement the assignment.
 Let's begin with a reflection to practice. 
-[>1;95;0cType] your answers (with the question numbers) into =path_planning.txt=.
+Type your answers (with the question numbers) into =path_planning.txt=.
 
 1. In your own words, what is a /graph/ in the discrete mathematics/computer science sense?  How might you represent a graph using data structures in a computer program?  Pseudo-code is fine.
 2. Have you encountered any of the above algorithms before?
@@ -57,8 +57,6 @@ import math
 import time
 #+END_SRC
 
-#+RESULTS:
-: None
 
 Let's begin by loading a map into a two-dimensional array of unicode characters (specifically, emoji).
 We are using Python 3 and annotating types wherever we can.
