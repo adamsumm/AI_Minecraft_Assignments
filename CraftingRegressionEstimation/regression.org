@@ -1,0 +1,442 @@
+#+OPTIONS: ':t *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:nil broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
+#+TITLE: Data-driven Craft Planning
+#+DATE: <2018-09-19>
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 26.1 (Org mode 9.1.13)
+
+This assignment is our first foray into machine learning.
+Way back in /Craft Planning with Iterative Widening,/ we thought about using A* but no good heuristic was immediately obvious.
+In this assignment, we will train a variety of different machine learning models using =pytorch=, visualize their performance with =matplotlib=, and eventually be able to make informed guesses about how close a given state is to a given goal state.
+
+- First, we will do a straightforward linear regression;
+- Then, we'll implement the perceptron learning algorithm;
+- Next, we'll use PyTorch to make both a single-layer and a deep neural network;
+- After that, we'll compare different activation functions for these two topologies of network.
+- Finally, we'll implement A* using our best model to give a heuristic.
+
+You'll learn several workhorse techniques for data science and machine learning in Python:
+
+- How to perform matrix arithmetic in Python using =numpy=
+- How to visualize data with =matplotlib=
+- How perceptron learning by gradient descent works
+- How to define and train neural network models with PyTorch
+- How different activation functions behave
+
+First we need some packages.  Let's write in =regression.py=:
+
+#+BEGIN_SRC python
+import numpy
+import matplotlib.pyplot as plt
+#+END_SRC
+
+=pytorch= needs a special installation command; in your conda environment run:
+
+#+BEGIN_SRC bash
+conda install pytorch torchvision -c pytorch
+#+END_SRC
+
+If you're on Mac OS, you should also run this inside your conda environment:
+
+#+BEGIN_SRC bash
+conda install python.app
+#+END_SRC
+
+That will help =matplotlib= render plots in nice windows for you.
+You could also do this assignment in a Jupyter notebook instead of on the command line.
+
+On Mac OS, you'll therefore need to run your program as:
+
+#+BEGIN_SRC bash
+pythonw regression.py  # Note the w!
+#+END_SRC
+
+Regular =python= ought to work on other platforms.
+
+* Linear Regression
+
+Before we get into our real dataset, let's get some practice with a synthetic dataset.
+This is a very good technique to check that your models are working properly---if they give nonsense answers to questions that ought to be straightforward, you have a bug!
+
+#+BEGIN_SRC python :session :results :output
+
+# Let's get some X values in a 1-column matrix
+X = numpy.arange(0, 20).reshape((20, 1))
+# And corresponding Y values, for the line y = 3.5x + 4.
+# It's more interesting if we add some noise in there as well.
+Y = numpy.array([3.5 * x + 4 + numpy.random.uniform(-8.0, 8.0) for x in X]).reshape((20,1))
+
+# And plot the points:
+plt.plot(X,Y,'rx')
+plt.show()
+#+END_SRC
+
+For a person it should be pretty easy to see the overall trend.
+We can use linear regression and check that we obtain the parameters 3.5 and 4!
+
+** Linear algebra refresher
+
+Think back to linear programming, but let's focus on systems of linear /equalities/ rather than inequalities, and let's put all the constant-times-variable terms on the left hand side of the equation and the additive constants on the right hand side.
+Also assume every equation refers to every variable (maybe multiplied by 0) in the same order.
+Now, let's split each of those equations into two lists: a list of left hand sides with members like $ax + by + cz + ...$ and a list of right hand sides with members like $0$ or $-5$.
+  
+1. Instead of representing this as two parallel lists, we can represent it as two /matrices/ containing only constants (and no variables).  If we have $M$ constraints and $N$ variables, how many rows and columns does each of these two matrices have?  What does each row and column represent?
+2. Have you ever seen the matrix method for solving systems of linear equations?  It is a cute trick for finding values of variables that are consistent across all the equations.
+3. How could we write the line equation $y = 3.5 x + 4$ in terms of the two matrices described above?
+4. Matrix algebra refresher time: If I take the dot product of a 1x2 matrix and a 2x1 matrix, what is the shape of the result?  You can look this up if you don't remember.
+5. Now let's introduce a a third matrix which is a column matrix of each variable (in this case, just two rows containing the variables $x$ and $y$).  What is the dot product of the left-hand-side matrix (call it $A$) and the variable matrix (call it $X$)? 
+6. If we set $AX$ equal to our constant matrix (call it $B$), what is true of solutions to $AX=B$?
+7. Let's say we have two rows in $A$ and $B$, i.e. two lines.  We want to solve for $X$ to find where the two lines intersect.  We can do algebra on matrices!  Remind yourself what the inverse of a matrix $X^{-1}$ means and how to calculate it.  If we want to "divide" the left hand side of $AX=B$ by $A$ to move it to the right, we can write that as $X=A^{-1}B$.  Calculate this solution if our second line is $y = -2x - 2$.
+
+Let's do all that in Python:
+
+#+BEGIN_SRC python
+def matrix_playground():
+    A = numpy.array([[-3.5, 1], [2, 1]])
+    B = numpy.array([4, -2])
+    # numpy.dot(m1, m2) gives a dot product
+    # numpy.linalg.inv(m) gives an inverse
+    X = None # A. replace me with X = A^1 B
+    print("Intersection at", X)
+matrix_playground()
+#+END_SRC
+
+** Least Squares Regression
+
+8. [@8] What do we know/don't know as givens in a /regression/ problem as opposed to when we're solving linear equations?
+9. Assuming all the examples in our dataset are noise-free and are from the same linear function, can we get a perfect algebraic solution by just flipping our variables and parameters/constants?  If so, how?  If not, why not?
+10. Are the assumptions of (9) realistic?  Will that approach work for linear regression of points from arbitrary distributions and in the presence of noise?
+
+Let's rewrite our linear models as $X\beta = Y$, where $X$ is the matrix of independent variable values where rows are examples and columns are variable values (for a single line, we have one column representing $x$ and one row for each value of $x$ in each example), $\beta$ is a column matrix of coefficients in the function we're trying to learn (also called "regressors"), and $Y$ is a column matrix of the values of the dependent variable---the values of $y$ we've seen for each row in $X$.     
+In least-squares regression, we want to find values for $\beta$ which minimize the overall error---the sum of the squares of the absolute differences between each example $y$ and the $y$ predicted by the parameters $\beta$ for that example's $x$ values.
+In other words, we want to minimize $\lvert Y - X \beta \rvert ^2$, or equivalently solve $Y = X \beta + \epsilon$ minimizing the error term epsilon.
+Take it as a given (show a derivation for extra credit!) that the critical point for this equation comes where $\beta = (X^T X)^{-1} X^T Y$.
+Let's write that in Python!
+
+#+BEGIN_SRC python
+# in numpy, you can write the transpose of a matrix like so: X.T
+B = None # Fill me in with the numpy version of the above equation
+print("Beta:", B)
+plt.plot(X, Y, 'x')
+plt.plot(X, np.dot(X, B))
+plt.show()
+#+END_SRC
+
+11. [@11] What seems off about the plot and parameters above?
+
+The issue here is that there's nowhere in $X$ for the constant y-intercept to live.  Let's imagine a pseudo-variable $x_k$ whose value is always 1 (and where $k$ is equal to the number of real variables plus 1).
+This is sometimes called a /bias/.
+We can amend our definition of X and B like so:
+
+#+BEGIN_SRC python
+# "stack" two columns together: the original X and the new column matrix of ones
+X = numpy.hstack((X, numpy.ones(shape=(20, 1))))
+# This stays the same
+B = numpy.dot(numpy.linalg.inv(numpy.dot(X.T, X)), numpy.dot(X.T, Y))
+print("Beta 2:", B)
+# We can get the first column of a matrix this way. The : does a "slice".
+plt.plot(X[:, 0], Y, 'x')
+# Likewise.
+plt.plot(X[:, 0], numpy.dot(X, B))
+plt.show()
+#+END_SRC
+
+12. [@12] How does it look now?  What do the elements of $\beta$ signify?
+13. Play with the noise factor (the -8 and +8) used in initializing $Y$.  If you set it to 0, what happens?  If you set it very high, what happens?
+
+** Regressing on crafting times
+
+First let's load the CSV file of crafting examples (put this in =craft_h.py=):
+
+#+BEGIN_SRC python :session :results :output
+import numpy
+import matplotlib.pyplot as plt
+import pytorch
+import csv
+
+with open('crafting_times.csv', 'r') as infile:
+    csvfile = csv.reader(infile)
+    header = next(csvfile)
+    data = []
+    for line in csvfile:
+        data.append([float(s) for s in line])
+    data = numpy.array(data)
+
+print(header)
+print(data[0])
+#+END_SRC
+
+14. [@14] In your own words, what does a row of =data= represent?
+15. Which column is the dependent variable?  Which columns are the independent variables?
+16. How could we turn this single dataset into a training set and a validation set?
+
+We can split a Python list or iterable (or lots of other things) like so:
+
+#+BEGIN_SRC python
+# Example
+first_five = lst[:5]
+first_fives = nested_lst[:,:5]
+first_of_rest = nested_lst[1:,0]
+#+END_SRC
+
+Let's turn our big dataset into two $X$ and $Y$ matrices for our training and validation set.
+
+#+BEGIN_SRC python
+validation_split = 0.3 # Take 30% for validation
+samples = data.shape[0] # Get the number of rows
+validation_samples = validation_split * samples
+
+print("S:",len(validation_samples),samples)
+
+Y = data[int(validation_samples):,0]
+X = data[int(validation_samples):,1:]
+
+Y_validation = data[:int(validation_samples),0]
+X_validation = data[:int(validation_samples),1:]
+#+END_SRC
+
+We can do regression just like before (I told you matrices were useful!):
+
+#+BEGIN_SRC python :session :results :output
+linreg_B = np.dot(np.inv(np.dot(X.T,X)), np.dot(X.T, Y))
+print(B)
+#+END_SRC
+
+17. [@17] What do you think about this value of $\beta$?  How can you interpret it, and do you believe what it says?
+
+But plotting that extremely high-dimensional function on a 2D graph seems like it would be hard to read.
+Instead, we can use our regressed parameters to predict for each $x$ what the corresponding $y$ ought to be, and calculate for each observation a quantity called the /residual/ to measure how far from the observed $y$ our predicted $\hat{y}$ ("y hat") is.
+This helps us get a feel for how wrong our guesses are overall.
+The residual is different from the /error/ that least-squares regression is minimizing: error is deviation from the true underlying distribution (the straight line), while the residual is deviation from observations (the noisy data).
+Each data point has a corresponding residual, but we'll also use the term to refer to the complete matrix of residuals (one per data point).
+
+We have $Y$---crafting times---from the dataset, so let's call our predicted outputs$\hat{Y}$.
+We can multiply $X$ by $\beta$ to obtain $\hat{Y}$.
+
+#+BEGIN_SRC python
+Yhat = None # How do we calculate "Y hat"?
+print("Y shape:", Y.shape, "Yhat shape:", Yhat.shape)
+#+END_SRC
+
+18. [@18] Why are the shapes of Y and Yhat different?
+19. Why does $X \beta = \hat{Y}$, and not $Y$?
+20. What's the residual of our proposed $\hat{Y}$ versus $Y$?
+21. If we want to determine our residual for on the validation set, how can we calculate our predictions and the residual error?
+22. What are some ways you might turn the (matrix) residual into a single scalar quantity describing how good the overall estimates are?  Do you remember any appropriate methods from a statistics class?
+
+In this assignment we'll use the root mean square deviation for (21), which is defined as $\sqrt{\frac{\sum_i^n \hat{Y}_i - Y_i}{n}}$.
+You can use =numpy.sqrt= and =numpy.mean= for this (look up their documentation to understand how to apply them here).
+Note that the residual already describes the quantity inside the sum and you can multiply matrices by matrices with =*= to do element-wise multiplication.
+
+#+BEGIN_SRC python
+residual = None # replace with some expression of Y and Yhat
+mae = None # calculate this too! 
+print("Mean absolute error:",mae)
+Yhat_validation = None
+residual_validation = None
+mae_validation = None
+print("Mean absolute error (validation):",mae_validation)
+#+END_SRC 
+
+We can also plot the residuals on the training set and the validation set:
+#+BEGIN_SRC python
+plt.plot(Y,residual,'x')
+plt.plot(Y_validation,residual_validation,'ro')
+plt.show()
+#+END_SRC
+
+23. [@23] Why is Y being used as the x axis on this graph, and how do we read this graph?  What would a "good" output look like?
+
+So we have some estimates.
+Let's see if they're helpful by implementing A* for task planning (you can base it on your Dijkstra implementation from the crafting planning assignment).
+For your heuristic, use the $\beta$ parameters to predict, for a given current and goal inventory, what the crafting time will be.
+
+#+BEGIN_SRC python
+def h_linreg(state, goal):
+    global linreg_B # we'll use the linreg_B from the top level.  Sloppy, but it will work for now.
+    return 0 # Make a prediction based on B!
+
+def plan_astar(heuristic, initial, goal, limit):
+    pass # Implement A* using the given heuristic function
+#+END_SRC
+
+And we can try it on some problems:
+
+#+BEGIN_SRC python
+# Example
+plan_astar(h_linreg, 
+           State.from_dict({}), 
+           State.from_dict({'stone_pickaxe':1}), 
+           200000)
+plan_astar(h_linreg, 
+           State.from_dict({'bench':1}), 
+           State.from_dict({'ingot':1}),
+           200000)
+#+END_SRC
+
+24. [@24] What do you think about the use of this heuristic for guiding search?  How does it compare to your Dijkstra's implementation in terms of visit count, runtime, or optimality? 
+25. Is this heuristic admissible?  Is it valid (i.e., does it only go down or stay the same as you get closer to the goal)? 
+26. Does it make sense to treat the inference of crafting time as a linear regression problem?
+
+* Artificial Neural Networks
+
+Let's try another approach: neural networks.
+They're all the rage these days.
+We'll start by looking at a simple kind of neural network called a /perceptron./
+A perceptron is a linear function of some inputs producing some output; what distinguishes a perceptron is that it is either /on/ if the output is bigger than 0 or /off/ otherwise.
+This output, by way of metaphor, is called the /activation/ of the perceptron.
+Here we aren't interested in classification problem but in the simpler regression problem, so our perceptrons will skip that thresholding test and instead output just their level of activation as their prediction.
+
+A linear function is nothing new---$X \beta$ is a linear function, after all.
+The difference with perceptrons is how the parameters ($\beta$) are learned.
+Instead of taking all examples at once and minimizing error by matrix math (as we did above), perceptrons /iteratively/ update the parameters as new examples come in.
+This means they are /online/ rather than /offline/---they immediately learn from each example and, it is hoped, /converge/ on the right parameters as the number of examples (and the times they are shown to the perceptron) approaches infinity.
+The perceptron is defined as $W X + b$ where $b$ is some /bias/ term, but we can also represent it just as $W X$ (or equivalently $X \beta$) if we have a dummy variable which is always set to 1, as we did with our matrix math.
+
+#+BEGIN_SRC python
+# Example
+prediction = np.dot(input_variables, weights)
+#+END_SRC
+
+27. [@27] If we have an sample input-output mapping (stored in Python variables =xt= and =yt=), and our perceptron's weights are in a variable called =weights=, how do we calculate the prediction for that input?  What's the residual?
+28. Jump back to =regression.py=.  Let's use a value of $\beta$ (or $w$) which is all zeroes.  What does the perceptron predict for the first sample in the straight-line dataset?  What's the residual?
+29. What does the residual tell us about the weights we picked for $x$?  Do we need to increase or decrease the weights?  Why?
+
+The amount of blame we can assign to each weight can be calculated like so:
+
+#+BEGIN_SRC python
+# Example
+blame = residual * input_variables 
+#+END_SRC
+
+Perceptron learning generally works with a /learning rate/ parameter between 0 and 1 which describes how quickly to push the weights in the direction suggested by the sample.
+So the perceptron update rule is:
+#+BEGIN_SRC python
+# Example
+learning_rate = 0.0001 # Or whatever
+weights += learning_rate * residual * input_variables
+#+END_SRC
+
+30. [@30] Execute the update rule repeatedly, in a loop, for the first sample only.  What happens to the weights?  Do they seem right?
+31. Execute the update rule once for each of the line samples in turn.  What happens to the weights?
+32. Can you think of a condition under which you could stop the updating process?  Execute the update rule repeatedly for all the samples in order until you feel like you ought to stop.
+33. What would happen if the learning rate were much higher (i.e., close to 1)?  How long does it take to get a satisfying answer?
+34. How about if the learning rate were very close to 0?
+35. There's another way to write the perceptron update rule, which is to calculate the residual for /all/ the sample predictions and then update the weights all at once.  Implement that in Python with one outer loop deciding when to stop, and no inner loop (i.e., use matrix operations instead of loops).
+36. Switch back to =craft_h.py= and try your perceptron learning algorithm on the crafting dataset.  What parameters does it learn?  How does it compare to the linear regression approach?
+
+Ultimately, perceptrons can only learn linear functions.
+So we haven't bought anything (yet!) with the switch to neural networks.
+But these things must be popular for a reason, so let's give it another go.
+We'll rewrite our perceptron network in =pytorch= back in =regression.py=:
+
+#+BEGIN_SRC python
+import torch
+
+# We predict from 1 input variable...
+input_dimension = 1
+# to one output variable.
+output_dimension = 1
+
+# Define a neural network model as a stack of layers
+model = torch.nn.Sequential(
+    # The only layer here is a linear layer, i.e. a perceptron
+    torch.nn.Linear(input_dimension, output_dimension)
+)
+#+END_SRC 
+
+37. [@37] How many parameters should the model have?
+
+#+BEGIN_SRC python
+# Example
+print(list(model.parameters()))
+#+END_SRC
+
+A training loop in PyTorch looks like this:
+
+#+BEGIN_SRC python
+# Convert our numpy arrays to torch tensors
+Xt = torch.Tensor(X)
+# To make Yt match the shape of Yhat, we'll need it to be a slightly different shape
+Yt = torch.Tensor(Y.reshape((len(Y), 1)))
+
+learning_rate = 0.0001
+
+# We'll use mean squared error as our loss function
+loss_fn = torch.nn.MSELoss(size_average=False)
+for t in range(500):
+    # Make a prediction
+    Yhatt = model(Xt)
+    # Calculate loss (the error of the residual)
+    loss = loss_fn(Yhatt, Yt)
+    print(loss.item())
+    # Clear out the "gradient", i.e. the old update amounts
+    model.zero_grad()
+    # Fill out the new update amounts
+    loss.backward()
+    # Go through and actually update model weights
+    with torch.no_grad():
+        for param in model.parameters():
+            param -= learning_rate * param.grad
+print(list(model.parameters()))
+#+END_SRC
+
+38. [@38] Play with different values for the learning rate and the number of iterations (/epochs/).  What do you observe?
+39. Copy that training loop into =crafting_h.py=; how many parameters should the model have, and what do you observe about the training process there? 
+
+Well, it should come as no surprise that we haven't bought anything with the move to a torch-based perceptron.
+It's still linear activations, after all!
+Let's make this a /deep neural network/ by adding a /hidden layer/ (you can stay in =crafting_h.py=).
+
+#+BEGIN_SRC python
+# Let's imagine we have 20 neurons in the hidden layer 
+hidden_dimension = 20
+model = torch.nn.Sequential(
+    torch.nn.Linear(input_dimension, hidden_dimension),
+    torch.nn.Linear(hidden_dimension, output_dimension)
+)
+learning_rate = 0.000001
+# We'll use mean squared error as our loss function
+loss_fn = torch.nn.MSELoss(size_average=False)
+for t in range(500):
+    # Make a prediction
+    Yhatt = model(Xt)
+    # Calculate loss (the error of the residual)
+    loss = loss_fn(Yhatt, Yt)
+    print(loss.item())
+    # Clear out the "gradient", i.e. the old update amounts
+    model.zero_grad()
+    # Fill out the new update amounts
+    loss.backward()
+    # Go through and actually update model weights
+    with torch.no_grad():
+        for param in model.parameters():
+            param -= learning_rate * param.grad
+#+END_SRC
+
+40. [@40] In terms of matrix operations, how do we make predictions now that we have two sets of weights?
+41. What do you think it means when we say "we have 20 neurons in the hidden layer"?
+42. How many parameters do we have now?
+43. Does this network make better predictions than the last one?  What if you train it for longer?
+44. Could the composition of linear functions ever give nonlinear behavior?
+
+Let's try again with some /nonlinearity/ in the mix, by changing the activation function of the inner part of our network:
+#+BEGIN_SRC python
+model = torch.nn.Sequential(
+    torch.nn.Linear(input_dimension, hidden_dimension),
+    torch.nn.ReLU(), # A ReLU layer turns inputs into activations nonlinearly
+    torch.nn.Linear(hidden_dimension, output_dimension)
+)
+#+END_SRC
+
+45. [@45] Look up the definition of the "relu activation function" online.  How is it different from the linear combinations we've been looking at so far?  What does it mean to say "A linear layer followed by a ReLU activation layer"?
+46. Mess with training hyperparameters (learning rate, number of epochs, number of hidden layers) to minimize loss.  What values did you find that worked best, and how long did training take?
+47. Define a new heuristic function that uses those model parameters (you can just use the model directly) to make predictions from an initial and goal state.  Call =plan_astar= with that function and compare its behavior to your linear regression heuristic.
+48. Is this new heuristic admissible?  Is it valid?
+49. Try adding additional hidden (linear) layers with varying numbers of hidden nodes (say, decreasing numbers like 100, 50, 10), each followed by ReLU activations.  Write out your model here and describe its performance (i.e., consider questions 46-48).  What is the best neural network topology you can find?
+50. How do your learned heuristics do?  Does learning heuristics make sense for this problem?  Does it make sense in general?

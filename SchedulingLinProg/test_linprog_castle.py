@@ -70,7 +70,7 @@ def expect_model(m1, m2, fraction, explanation):
     print(explanation)
     register_point()
     good = True
-    for k2, v2 in m2:
+    for k2, v2 in m2.items():
         assert k2 in m1
         v1 = m1[k2]
         if abs(v1 - v2) > fraction * v2:
@@ -103,9 +103,10 @@ expect_model(model, {
     "c": 32680
 }, 0.01, "Decision variable values")
 
+# TODO fixme wrong, plan must take at least three hours to make sense
 print("1,20000")
 opt, model = solve_castle_1(1, 20000)
-expect_exactly(opt, 7866, "Optimal cost")
+expect_nearly(opt, 7866.667, 0.01, "Optimal cost")
 expect_model(model, {
     "a": 4266.6,
     "b": 7866.6,

@@ -6,6 +6,7 @@ First, you'll need to set up a conda environment for the projects:
 
 #+BEGIN_SRC bash
 conda create -n minecraft-assignments python=3.6 numpy scipy matplotlib scikit-learn ffmpeg openjdk
+conda install pytorch torchvision -c pytorch
 # This is a line you'll be typing in every new terminal window
 source activate minecraft-assignments
 

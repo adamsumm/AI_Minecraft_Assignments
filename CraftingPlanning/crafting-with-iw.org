@@ -368,7 +368,7 @@ def plan_width(initial: State, goal: State, WMax: int) -> Tuple[int, int, Option
         while open_list:
             cost, state = heapq.heappop(open_list)
             visited += 1
-            # I. This should look like your graph search (Dijkstra's is a nice choice), except...
+            # J. This should look like your graph search (Dijkstra's is a nice choice), except...
             # Call see_state on newly expanded states to update seen_combinations and use its return value to decide whether to add this state to the open list (is that the only thing that determines whether it should go on the open list?)
     return visited, -1, None
 

@@ -70,7 +70,7 @@ def expect_model(m1, m2, fraction, explanation):
     print(explanation)
     register_point()
     good = True
-    for k2, v2 in m2:
+    for k2, v2 in m2.items():
         assert k2 in m1
         v1 = m1[k2]
         if abs(v1 - v2) > fraction * v2:

@@ -44,6 +44,9 @@ Recall that in a linear program, we define /decision variables/ which are to be 
 Take a moment to reflect on and write out answers to these questions (in a file like =linprog_castle.txt=) before moving on---it will make the programming portion much easier.
 These reflections will also be graded, so doing them is strongly recommended!
 
+*************** TODO this assumes the plan takes at least three hours, and doesn't work for values of W and T that do not require three hours or more to complete.
+*************** END
+
 1. What are the decision variables in this problem?
 2. Assuming that we are starting at 10:00, and using the constants $W$ and $T$ from the introduction, what are the constraints on feasible solutions?  Use a formal notation, i.e. a list of mathematical inequalities.  Remember that we need to enforce that no one works more time than they are allowed to work and that the castle is finished by the end of the schedule.
 3. In plain language, what are we trying to optimize?  Are we minimizing or maximizing this quantity?  This can get somewhat subtle, so be careful!
