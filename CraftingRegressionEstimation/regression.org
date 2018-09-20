@@ -387,7 +387,8 @@ print(list(model.parameters()))
 #+END_SRC
 
 38. [@38] Play with different values for the learning rate and the number of iterations (/epochs/).  What do you observe?
-39. Copy that training loop into =crafting_h.py=; how many parameters should the model have, and what do you observe about the training process there? 
+39. Copy that training loop into =crafting_h.py=; how many parameters should the model have, and what do you observe about the training process there?
+40. Plot the residuals versus the predictions in the same way we did before.  What do you notice?
 
 Well, it should come as no surprise that we haven't bought anything with the move to a torch-based perceptron.
 It's still linear activations, after all!
@@ -419,11 +420,13 @@ for t in range(500):
             param -= learning_rate * param.grad
 #+END_SRC
 
-40. [@40] In terms of matrix operations, how do we make predictions now that we have two sets of weights?
-41. What do you think it means when we say "we have 20 neurons in the hidden layer"?
-42. How many parameters do we have now?
-43. Does this network make better predictions than the last one?  What if you train it for longer?
-44. Could the composition of linear functions ever give nonlinear behavior?
+41. [@41] In terms of matrix operations, how do we make predictions now that we have two sets of weights?
+42. What do you think it means when we say "we have 20 neurons in the hidden layer"?
+43. How many parameters do we have now?
+44. Does this network make better predictions than the last one?  What if you train it for longer?
+45. Could the composition of linear functions ever give nonlinear behavior?
+46. Plot the residuals versus the predictions in the same way we did before.  What do you notice?
+
 
 Let's try again with some /nonlinearity/ in the mix, by changing the activation function of the inner part of our network:
 #+BEGIN_SRC python
@@ -434,9 +437,10 @@ model = torch.nn.Sequential(
 )
 #+END_SRC
 
-45. [@45] Look up the definition of the "relu activation function" online.  How is it different from the linear combinations we've been looking at so far?  What does it mean to say "A linear layer followed by a ReLU activation layer"?
-46. Mess with training hyperparameters (learning rate, number of epochs, number of hidden layers) to minimize loss.  What values did you find that worked best, and how long did training take?
-47. Define a new heuristic function that uses those model parameters (you can just use the model directly) to make predictions from an initial and goal state.  Call =plan_astar= with that function and compare its behavior to your linear regression heuristic.
-48. Is this new heuristic admissible?  Is it valid?
-49. Try adding additional hidden (linear) layers with varying numbers of hidden nodes (say, decreasing numbers like 100, 50, 10), each followed by ReLU activations.  Write out your model here and describe its performance (i.e., consider questions 46-48).  What is the best neural network topology you can find?
-50. How do your learned heuristics do?  Does learning heuristics make sense for this problem?  Does it make sense in general?
+47. [@47] Look up the definition of the "relu activation function" online.  How is it different from the linear combinations we've been looking at so far?  What does it mean to say "A linear layer followed by a ReLU activation layer"?
+48. Mess with training hyperparameters (learning rate, number of epochs, number of hidden layers) to minimize loss.  What values did you find that worked best, and how long did training take?
+49. Plot the residuals versus the predictions in the same way we did before.  What do you notice?
+50. Define a new heuristic function that uses those model parameters (you can just use the model directly) to make predictions from an initial and goal state.  Call =plan_astar= with that function and compare its behavior to your linear regression heuristic.
+51. Is this new heuristic admissible?  Is it valid?
+52. Try adding additional hidden (linear) layers with varying numbers of hidden nodes (say, decreasing numbers like 100, 50, 10), each followed by ReLU activations.  Write out your model here and describe its performance (i.e., consider questions 46-48).  What is the best neural network topology you can find?
+52. How do your learned heuristics do?  Does learning heuristics make sense for this problem?  Does it make sense in general?
