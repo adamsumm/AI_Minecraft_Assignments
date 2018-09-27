@@ -290,7 +290,7 @@ def state_propositions(state: State) -> Set[Proposition]:
 def recipe_propositions(recipe: Recipe) -> Set[Proposition]:
     propositions: Set[Proposition] = set()
     # G. Do something with recipe.consumes, recipe.produces, and recipe.requires.
-    # Emit, for this recipe, all the propositions entailed by the preconditions and the _minimal_ set of propositions embodied in the preconditions (i.e., don't need to output wood >= 2, wood >= 1, wood >= 0 if the recipe creates 2 wood.)
+    # Emit, for this recipe, all the propositions entailed by the preconditions and the _minimal_ set of propositions embodied in the postconditions (i.e., don't need to output wood >= 2, wood >= 1, wood >= 0 if the recipe creates 2 wood.)
     return propositions
 
 recipe_propositions = set()

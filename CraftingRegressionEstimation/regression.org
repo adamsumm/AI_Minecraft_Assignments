@@ -63,7 +63,7 @@ Regular =python= ought to work on other platforms.
 Before we get into our real dataset, let's get some practice with a synthetic dataset.
 This is a very good technique to check that your models are working properly---if they give nonsense answers to questions that ought to be straightforward, you have a bug!
 
-#+BEGIN_SRC python :session :results :output
+#+BEGIN_SRC python
 
 # Let's get some X values in a 1-column matrix
 X = numpy.arange(0, 20).reshape((20, 1))
@@ -153,7 +153,7 @@ plt.show()
 
 First let's load the CSV file of crafting examples (put this in =craft_h.py=):
 
-#+BEGIN_SRC python :session :results :output
+#+BEGIN_SRC python
 import numpy
 import matplotlib.pyplot as plt
 import pytorch
@@ -202,7 +202,7 @@ X_validation = data[:int(validation_samples),1:]
 
 We can do regression just like before (I told you matrices were useful!):
 
-#+BEGIN_SRC python :session :results :output
+#+BEGIN_SRC python
 linreg_B = np.dot(np.inv(np.dot(X.T,X)), np.dot(X.T, Y))
 print(B)
 #+END_SRC
@@ -418,6 +418,7 @@ for t in range(500):
     with torch.no_grad():
         for param in model.parameters():
             param -= learning_rate * param.grad
+
 #+END_SRC
 
 41. [@41] In terms of matrix operations, how do we make predictions now that we have two sets of weights?
@@ -429,12 +430,14 @@ for t in range(500):
 
 
 Let's try again with some /nonlinearity/ in the mix, by changing the activation function of the inner part of our network:
+
 #+BEGIN_SRC python
 model = torch.nn.Sequential(
     torch.nn.Linear(input_dimension, hidden_dimension),
     torch.nn.ReLU(), # A ReLU layer turns inputs into activations nonlinearly
     torch.nn.Linear(hidden_dimension, output_dimension)
 )
+
 #+END_SRC
 
 47. [@47] Look up the definition of the "relu activation function" online.  How is it different from the linear combinations we've been looking at so far?  What does it mean to say "A linear layer followed by a ReLU activation layer"?
