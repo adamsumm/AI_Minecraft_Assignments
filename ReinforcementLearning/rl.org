@@ -3,7 +3,7 @@
 #+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
-#+TITLE: Task and Path Planning with Reinforcement Learning
+#+TITLE: Path and Task Planning with Reinforcement Learning
 #+DATE: <2018-08-23>
 #+LANGUAGE: en
 #+SELECT_TAGS: export
@@ -12,7 +12,7 @@
 
 This assignment is the last time we'll look at task or path planning---phew!
 In this assignment, you will be implementing a reinforcement learning agent to accomplish the goal we approached more analytically in the SMT assignment.
-The key difference here is that rather thanw orking on a model of the game world, we will work on literal, actual Minecraft via the Malmo API.
+The key difference here is that rather than working on a model of the game world, we will work on literal, actual Minecraft via the Malmo API.
 The support program will initialize, for each training episode, a Minecraft world with resources arranged in a particular way unknown to the agent.
 It is then the agent's job to find a movement and crafting /policy/ that gets it from an initial state to a goal condition.
 
@@ -27,3 +27,25 @@ The goal of this assignment is for you to understand:
 - Tradeoffs in building RL algorithms
 - Why approximation of the value function is key to more efficient training
 - How computational RL is like and unlike human or animal learning
+
+* Path Planning via Reinforcement Learning
+
+q-learning in lava domain
+
+* Now randomize goal position
+
+Whoops, doesn't work, now we need to do feature crafting
+
+* Deep Reinforcement Learning
+
+OK, now we can just give it the whole world state and no extra features and let it figure out how to generalize.
+
+deep q-learning
+
+* Add an action: Place a block out of a limited supply, change lava domain to have more gaps or more disconnected islands
+
+* Generalizing goals: RL for discovery and exploration
+
+Exploration of a default minecraft world under threat, but with an iron pickaxe; new actions include dig and fight.  no hunger.
+
+deep q-learning again
