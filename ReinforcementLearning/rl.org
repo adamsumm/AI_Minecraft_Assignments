@@ -3,49 +3,296 @@
 #+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
-#+TITLE: Path and Task Planning with Reinforcement Learning
+#+TITLE: Path Planning with Reinforcement Learning
 #+DATE: <2018-08-23>
 #+LANGUAGE: en
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
 #+CREATOR: Emacs 26.1 (Org mode 9.1.13)
 
-This assignment is the last time we'll look at task or path planning---phew!
-In this assignment, you will be implementing a reinforcement learning agent to accomplish the goal we approached more analytically in the SMT assignment.
-The key difference here is that rather than working on a model of the game world, we will work on literal, actual Minecraft via the Malmo API.
-The support program will initialize, for each training episode, a Minecraft world with resources arranged in a particular way unknown to the agent.
+In this assignment, you will be implementing a reinforcement learning agent to navigate an /unknown/ environment.
+The other key difference here is that rather than working on a model of the game world, we will work on literal, actual Minecraft via the Malmo API.
+The given program skeleton (=rl.py=) will initialize, for each training episode, a Minecraft world with resources arranged in a particular way unknown to the agent.
 It is then the agent's job to find a movement and crafting /policy/ that gets it from an initial state to a goal condition.
 
 In this assignment you will:
 
 - Implement and evaluate a standard, tabular reinforcement learning method (temporal difference learning)
-- Generalize your algorithm using a deep neural network to approximate the value function
+- Implement deep Q-learning to generalize your algorithm by approximating the value function with a deep neural network
 
 The goal of this assignment is for you to understand:
 
+- How to run the Malmo environment
 - How reinforcement learning incorporates an agent's experiences into its policy
 - Tradeoffs in building RL algorithms
 - Why approximation of the value function is key to more efficient training
 - How computational RL is like and unlike human or animal learning
 
+This material is adapted from the Malmo Python tutorial.
+
+* Getting Malmo Going
+
+If you are on Windows, first install Malmo and its dependencies using the instructions in the README [[https://github.com/Microsoft/malmo][here]].
+You can then run Malmo's =launchClient.bat= from a Powershell prompt and your Python script from Anaconda's =cmd= (like =python rl.py=).
+
+If you are on Linux or Mac OS, the conda environment should already have malmo in it.
+Activating the environment should set =$MALMO_MINECRAFT_ROOT= and other environment variables appropriately.
+=cd $MALMO_MINECRAFT_ROOT && ./launchClient.sh= in one shell window (with the conda environment active) and =python rl.py= in another shell window (again with the conda environment active) should do the trick.
+
+No matter what OS you're on, you should see the agent spawn and start swimming in lava.
+
 * Path Planning via Reinforcement Learning
 
-q-learning in lava domain
+In assignment 1, we had perfect knowledge of the environment and the agent's dynamics.
+If a tile were an obstacle, had a high movement penalty, or were otherwise dangerous, an incremental step in the search might find that tile but it would never appear on an optimal path unless absolutely necessary.
+The agent's movements were also guaranteed to succeed and always had the same outcome every time.
+/Reinforcement learning/ is a strategy for solving black-box search problems by phrasing them as multi-armed bandits, then finding optimal policies for pulling the levers to maximize reward.  
+This also means that instead of finding the path in advance (perhaps with some targeted backtracking) and then following it, we are forced to try a /bunch/ of different candidate paths from start to finish and presume that the optimal path (or at least the closest we can get on a limited experience budget) is the one with the lowest cost.
+In other words, we learn a /policy/ for path finding in this particular environment which maximizes the likelihood we end up following the optimal path.  
 
-* Now randomize goal position
+In this assignment, we assume a lot less about the environment: we only know the agent's position in X and Z (in Malmo, Y is up and down).
+You can imagine that this is an agent who can only see their own feet, rather than a map of the world.
+We also get a single number out of the environment during every time point: a /reward signal./
+Let's think about this in =rl.txt=.
 
-Whoops, doesn't work, now we need to do feature crafting
+1. What would Agre say about the differences between path planning with A* and pathfinding by reinforcement learning? 
+2. Above, it was mentioned that the agent knows their absolute position in the world.  How is that different from a classical multi-armed bandit problem?
+3. What would be a reasonable reward signal if we wanted to maximize the likelihood that the agent reached the goal?
+4. What would be a reasonable reward signal if we wanted to minimize the time it takes for the agent to reach the goal?
+5. If some tiles were very dangerous, e.g. made of lava, how could we incentivize the agent to avoid those tiles?
+6. How could we combine those distinct signals into one number?
+7. Can we learn a whole policy from one run of the learning agent, or do we need to see multiple episodes to learn a policy?  Why? 
+
+Because we can distinguish world states where the agent is in different positions, we can think about measuring and /learning/ the value of taking some action in some particular state.
+Now, there may be states that we think are similar based on the agent's position but which are not the same (e.g., the map may be slightly different), but we can consider each state as an individual multi-armed bandit, and our problem is to learn the expected value of each action in each state.
+
+=rl.py= has three main hooks into Minecraft via the Malmo API: first, it must set up the environment and mission (mainly through XML); second, it must run Minecraft with that configuration; and third, it must send action commands and receive reward signals.
+
+** The Environment
+
+We'll be building a Minecraft lava maze with one promising but wrong avenue and a lot of places to fall and die.
+It will look a bit like this, with =#= being deadly lava and =.= being a regular tile, where S and G are the start and goal.
+#+BEGIN_SRC text
+############
+####...##.G#
+####...##..#
+####...##..#
+#..........#
+#S.........#
+############
+#+END_SRC
+
+In Malmo-ese, this is obtained by drawing a cuboid of lava, then drawing three cuboids of stone on top of that, then drawing a cuboid of cobblestone for the start and lapis for the goal.
+In =rl.py=, there's a big hairy XML string which contains this snippet:
+
+#+BEGIN_SRC xml
+      <DrawingDecorator>
+        <!-- coordinates for cuboid are inclusive -->
+        <DrawCuboid x1="-2" y1="46" z1="-2" x2="13" y2="50" z2="10" type="air" />            <!-- limits of our arena -->
+        <DrawCuboid x1="-2" y1="45" z1="-2" x2="13" y2="45" z2="10" type="lava" />           <!-- lava floor -->
+        <DrawCuboid x1="1"  y1="45" z1="1"  x2="11" y2="45" z2="3" type="sandstone" />      <!-- floor of the arena -->
+        <DrawCuboid x1="4"  y1="45" z1="1"  x2="7" y2="45" z2="8" type="sandstone" />      <!-- floor of the arena -->
+        <DrawCuboid x1="10"  y1="45" z1="1"  x2="12" y2="45" z2="8" type="sandstone" />      <!-- floor of the arena -->
+        <DrawBlock x="1"  y="45" z="1" type="cobblestone" />    <!-- the starting marker -->
+        <DrawBlock x="11"  y="45" z="7" type="lapis_block" />     <!-- the destination marker -->
+      </DrawingDecorator>
+#+END_SRC
+
+This XML snippet lives in the =ServerSection=, specifically in the =ServerHandlers= section where setup "code" can go.
+
+You can build your own maps by playing with DrawCuboid and DrawBlock in the XML, and I encourage you to do so in separate XML files (up to 2 points of assignment extra credit).
+
+8. [@8] If you did create custom maps, how are they different from the original map?
+
+After we load up the XML string, we can also make the environment a bit noisier to give the agent a harder time:
+
+#+BEGIN_SRC python
+my_mission = MalmoPython.MissionSpec(mission_xml, True)
+# add 10% holes to make the reward signals noisier
+for x in range(2, 11):
+    for z in range(2, 7):
+        if random.random() < 0.1:
+            my_mission.drawBlock(x, 45, z, "lava")
+#+END_SRC
+
+** The Agent 
+
+In this domain, our agent is specified to Malmo as a starting position, some capabilities, and some reward signals in the =AgentSection=.
+This agent has the ability to make discrete moves (e.g., "movenorth 1", "movewest 1", "movesouth 1", "moveeast 1"), and those will be our actions in this domain.
+The agent is also given positive rewards for reaching the lapis and negative rewards for touching lava (and for each action in the world).
+
+#+BEGIN_SRC xml
+  <AgentSection mode="Survival">
+    <Name>Cristina</Name>
+    <AgentStart>
+      <Placement x="1.5" y="46.0" z="1.5" pitch="30" yaw="0"/>
+    </AgentStart>
+    <AgentHandlers>
+      <!-- What movement controls does this agent have? -->
+      <DiscreteMovementCommands/>
+      <!-- What can this agent "see"?  We'll only use position. -->
+      <ObservationFromFullStats/>
+      <!-- What should Malmo report to the agent for a reward signal? -->
+      <RewardForTouchingBlockType>
+        <Block reward="-100.0" type="lava" behaviour="onceOnly"/>
+        <Block reward="100.0" type="lapis_block" behaviour="onceOnly"/>
+      </RewardForTouchingBlockType>
+      <RewardForSendingCommand reward="-1" />
+      <!-- When is the agent forced to quit and start a new episode? -->
+      <AgentQuitFromTouchingBlockType>
+          <Block type="lava" />
+          <Block type="lapis_block" />
+      </AgentQuitFromTouchingBlockType>
+    </AgentHandlers>
+  </AgentSection>
+#+END_SRC
+
+** Q-Learning
+
+Because we can distinguish different states, make actions, and observe their effects, we have everything we need to start learning whether a particular policy for choosing actions is good or bad.
+A /policy/ here is an algorithm for selecting an action, plus the data needed by that algorithm.
+Most policies, including the ones in this homework, assume you have a way to rank the different actions you might take in a given state.
+
+9. [@9] Write pseudocode for the function =pick_action(state, actions)=.  You can freely call the function =q(state, action)=, which gives the expected value of the action =action= in the state =state=, and you can also make random choices and do arithmetic.  Come up with three different definitions for =pick_action= (three different policies) and explain how they're different and what their strengths and weaknesses are.
+
+One popular policy is /\epsilon-greedy/, which greedily takes the best action (according to =q=) with probability (1-\epsilon) (which is a small number) and a random action otherwise.
+But you can also imagine weighted random choices or other approaches.
+
+We can imagine a policy like \epsilon-greedy working well only if the =q= function is a pretty reliable estimate of the expected value of taking action =action= in state =state=.
+
+10. [@10] If we knew Q exactly, how would we find the optimal path from the start to the goal?
+
+The question we have to ask at this point is, how do we learn =q=?
+In reinforcement learning, we learn =q= by experimentation: trying out different actions in different states and observing rewards.
+
+11. [@11] One approach to Q-learning might be to nudge =q= towards new rewards with new observations by gradient descent (with an extra parameter for something like the learning rate from our neural network training).  The "gradient" here would be the difference between the obtained reward and the expected reward.  Fill in the following pseudocode and paste it in =rl.txt=:
+#+BEGIN_SRC python
+# Pseudocode
+def qlearn_grad(environment, episode_count):
+  q = {}
+  alpha = 0.01
+  for i in range(episode_count):
+    environment.start_episode()
+    while(environment.episode_active()):
+      state = environment.get_state()
+      action = pick_action_epsilon_greedy(environment.actions, q)
+      reward = environment.act(action)
+      old_q = q.get((state, action), 0)
+      q[(state, action)] = old_q + ...
+#+END_SRC
+
+11. [@11] Is =qlearn_grad= guaranteed to learn the correct =q= function eventually?  If so, why?  If not, why not?
+12. Is there other information potentially available to the agent that could help learn =q= faster?  If I am on my tenth episode, what do I know about the =q= values in the state I just obtained from =action=?  How can that influence my estimate for =q(state, action)=?
+
+Classical Q-learning (in the Sutton and Barto definition) has a somewhat more complicated update rule.
+Rather than:
+#+BEGIN_SRC python
+q[(state, action)] += alpha * (reward - old_q)
+#+END_SRC
+
+We can augment our gradient using what we know about the new state we just entered:
+#+BEGIN_SRC 
+state2 = environment.get_state()
+gamma = 0.001
+q[(state, action)] += alpha * (reward + gamma * best_action_value(state2) - old_q)
+#+END_SRC
+Where =best_action_value= picks the highest =q= value among the actions possible in =state2=.
+
+13. [@13] In your own words, what does =gamma= mean?  Is there an upper and lower bound on the values it can take?  What are reasonable values?  (It might help to think about how one state-action pair's =q= might be influenced by the =q= of the states one step forward, two steps forward, and three steps forward in time.)
+14. How is =gamma= different from =alpha=?
+15. If I'm in state /a/, and state /d/ is reachable from /a/ in three states, how much does /d/'s expected value influence the expected value at /a/? 
+
+** Q-Learning in Malmo
+
+Now look closely at =rl.py=.
+We already showed some snippets responsible for setting up the environment, but now we need to run the agent in that environment.
+Malmo uses an =AgentHost= as the main communication channel between the Python agent and the running Minecraft game.
+
+16. [@16] Finish the implementation of =pick_action= and =qlearn_episode= in =rl.py= and run your agent.  Describe its performance for a few different values of alpha and gamma. 
+
+* Making things harder
+
+Let's try a slight generalization of the problem.
+We'll randomize the goal position by removing the lapis block drawing from the XML part and moving it to just before the mission is created.
+
+17. [@17] In a new file =rl2.py=, copy the contents of =rl.py=.  Remove the part of the mission XML that generates the lapis block and add some Python code (maybe close to where the lava is randomly added) which places the goal at a random position on the map.
+18. How does your same agent as before fare on =rl2.py=?  Why?
+19. What additional feature would we need to observe in order to successfully head towards our randomly positioned goal?
+20. How would that change our state representation and the type of =q=?
+21. Since you are generating the goal position, you can use the distance between the agent and the goal or the position of the goal directly without asking Malmo for it.  Try using either or both of these features and describe your =rl2.py= agent's performance with neither, just one, just the other, and both.
 
 * Deep Reinforcement Learning
 
-OK, now we can just give it the whole world state and no extra features and let it figure out how to generalize.
+So far our agent can be made to work with changes to the problem by changing how it sees the world, to help it generalize some.
+But we'd like it to handle all kinds of problems without us knowing in advance what features to feed it to make it generalize well.
+In machine learning applications, we can avoid extensive /feature engineering/ using techniques from deep learning.
+In this part of the assignment, we'll see what we gain by /approximating/ the =q= function with a neural network rather than learning it exactly by filling in a table.
+Let's begin by copying over =rl2.py= into =rl3.py=, adding an =import torch= at the top for good luck.
+We'll start by just observing the position of the goal rather than some engineered feature like the distance from the agent to the goal.  
+So our observed state will be the agent's X and Z coordinates and the goal's X and Z coordinates.
 
-deep q-learning
+22. [@22] If we are trying to approximate the =q= function with a neural network, what are the inputs and outputs of the =q= network?
+23. What are the training examples?
+24. Inspired by your work on assignment 3, propose a neural network architecture for approximating the =q= function.
+25. Look back on assignment 3's writeup to see how to train a neural network from some examples.  How do you suppose we could change this for the case where examples are coming one by one rather than in one big batch?
+26. Read or skim [[https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf][the DeepMind Deep Q-Learning paper]], especially the Methods section.  Ignoring the fact that they are working from computer vision, how does their approach differ from the one you proposed in 22-25?
 
-* Add an action: Place a block out of a limited supply, change lava domain to have more gaps or more disconnected islands
+Like the DeepMind paper, in our setting we always have the same set of four actions available.
+Therefore, using the =q= network to predict the reward for every action from a state at once seems like a good idea for us too.
 
-* Generalizing goals: RL for discovery and exploration
+27. [@27] Instead of initializing =q= in =rl3.py=, set up a network with a linear input layer, a hidden layer with a ReLU activation, and a linear output layer.  What should the input and output dimensions of each of these layers be?  (You get to pick the dimension of the hidden layer.)
 
-Exploration of a default minecraft world under threat, but with an iron pickaxe; new actions include dig and fight.  no hunger.
+This means that we need to change the definition of =pick_action= as well.
 
-deep q-learning again
+Still following the paper above, we want to record every new experience we see, where an experience is a tuple of a starting state, an action, a reward, and a successor state.  
+After each action, instead of updating =q= using the action we just took (and recorded) we instead train on a randomly selected batch of previously recorded experiences.
+This prevents the network from seeing a bunch of very similar examples in a row and improves the stability of the learning process.
+
+28. [@28] Modify =qlearn_episode= in =rl3.py= to record experiences in a new global data structure and perform a network update, as in the DeepMind paper.  Do you need to put a limit on how much you remember?  If so, how might you pick which memories to discard?
+29. If you look closely at the algorithm pseudocode given in the paper, you'll notice that it uses /two/ networks: $Q$ and $\hat{Q}$.  Why?  Implement that in your =qlearn_episode= function (you may need a new argument to =qlearn_episode= and a new variable in =run_trials=.
+
+The paper uses an optimization strategy called /RMSProp/ and not the gradient descent you've used so far.  
+We'll need to =import torch.optim= to use different optimizers.
+In PyTorch, an optimizer instead of manually updating weights looks a bit like this:
+
+#+BEGIN_SRC python
+import torch.optim as optim
+
+# When you're setting up your model, but before training...:
+model = ...
+# Stochastic Gradient Descent, lr (alpha) = 0.0001
+optimizer = optim.SGD(model.parameters(), lr = 0.0001)
+# Assume x, y tensors ( from https://pytorch.org/tutorials/beginner/pytorch_with_examples.html )
+# Also assume some loss function (what does the paper use? Does PyTorch provide that as a built-in loss function?)
+epochs = 500
+for t in range(epochs):
+    # Forward pass: compute predicted y by passing x to the model.
+    y_pred = model(x)
+
+    # Compute and print loss.
+    loss = loss_fn(y_pred, y)
+    print(t, loss.item())
+
+    # Before the backward pass, use the optimizer object to zero all of the
+    # gradients for the variables it will update (which are the learnable
+    # weights of the model). This is because by default, gradients are
+    # accumulated in buffers( i.e, not overwritten) whenever .backward()
+    # is called. Check out docs of torch.autograd.backward for more details.
+    optimizer.zero_grad()
+
+    # Backward pass: compute gradient of the loss with respect to model
+    # parameters
+    loss.backward()
+
+    # Calling the step function on an Optimizer makes an update to its
+    # parameters
+    optimizer.step()
+    # Note that you have no loop in here to update model weights, the
+    # optimizer does that for you!
+
+
+#+END_SRC
+
+30. [@30] Try out your agent with both gradient descent (either manually or using =optim.SGD= and using =optim.RMSprop=.  How does its performance change?  The [[https://pytorch.org/docs/stable/optim.html#torch.optim.RMSprop][documentation for =RMSprop=]] may be useful here. 
+31. Run your finished agent on the problem with and without random goal movement.  How does it compare to the original table-based agent?
+32. For your deep learning agent, does using distance from the goal as your additional observation instead of or in addition to the goal's absolute position make the same difference it made to your table-based agent?

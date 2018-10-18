@@ -5,18 +5,17 @@ These instructions assume a working miniconda or anaconda installation.
 First, you'll need to set up a conda environment for the projects: 
 
 #+BEGIN_SRC bash
-conda create -n minecraft-assignments python=3.6 numpy scipy matplotlib scikit-learn ffmpeg openjdk
-conda install pytorch torchvision -c pytorch
+conda config --add channels conda-forge 
+conda create -n minecraft-assignments python=3.6 numpy scipy matplotlib scikit-learn ffmpeg openjdk future
 # This is a line you'll be typing in every new terminal window
 source activate minecraft-assignments
+conda install pytorch torchvision -c pytorch
 
 #+END_SRC
 
 We are using the CrowdAI conda recipe for Malmo, so we'll need to install that separately:
 #+BEGIN_SRC bash
-conda config --add channels conda-forge 
 conda install -c crowdai malmo
-
 #+END_SRC
 
 Next we'll throw in pulp and the z3-solver package, which have no Conda recipe, along with some Python helpers used by various development tools:
