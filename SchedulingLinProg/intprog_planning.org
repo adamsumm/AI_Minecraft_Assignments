@@ -83,7 +83,7 @@ def solve_intprog(initial, goal, T):
     # Make constant-valued LpVariables from initial; also throw time in with other state variables.
     # There's no specific need to make these LpVariables, but it simplifies things to know that the type of initial_state_vars, the type of last_state_vars, and the type of state_vars are all the same.
     # Note that passing "cat='Integer'" to LpVariable makes the variable integral instead of real.
-    initial_state_vars = {item:pulp.LpVariable(item+"_0", initial.get(item,0), initial.get(item,0),cat='Integer') for s in items+['time']}
+    initial_state_vars = {item:pulp.LpVariable(item+"_0", initial.get(item,0), initial.get(item,0),cat='Integer') for item in items+['time']}
     last_state_vars = initial_state_vars
     for t in range(1, T+1):
         state_vars = {...} # A. make state variables for this time slot
@@ -188,7 +188,7 @@ def solve_intprog_compact(initial, goal, T):
     # Make constant-valued LpVariables from initial; also throw time in with other state variables.
     # There's no specific need to make these LpVariables, but it simplifies things to know that the type of initial_state_vars, the type of last_state_vars, and the type of state_vars are all the same.
     # Note that passing "cat='Integer'" to LpVariable makes the variable integral instead of real.
-    initial_state_vars = {item:pulp.LpVariable(item+"_0", initial.get(item,0), initial.get(item,0),cat='Integer') for s in items+['time']}
+    initial_state_vars = {item:pulp.LpVariable(item+"_0", initial.get(item,0), initial.get(item,0),cat='Integer') for item in items+['time']}
     last_state_vars = initial_state_vars
     for t in range(1, T+1):
         state_vars = {...} # A. make state variables for this time slot
