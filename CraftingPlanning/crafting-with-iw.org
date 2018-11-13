@@ -48,7 +48,7 @@ import heapq
 import time
 import itertools
 
-with open('Crafting.json') as f:
+with open('crafting.json') as f:
     Crafting = json.load(f)
 #+END_SRC python
 

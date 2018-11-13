@@ -1,27 +1,28 @@
-* Conda instructions (Mac, Linux)
+* Conda instructions
 
 These instructions assume a working miniconda or anaconda installation.
 
 First, you'll need to set up a conda environment for the projects: 
 
 #+BEGIN_SRC bash
-conda config --add channels conda-forge 
-conda create -n minecraft-assignments python=3.6 numpy scipy matplotlib scikit-learn ffmpeg openjdk future
+conda config --add channels conda-forge
+conda create -n minecraft-assignments python=3.6 numpy scipy matplotlib ffmpeg openjdk future
 # This is a line you'll be typing in every new terminal window
 source activate minecraft-assignments
-conda install pytorch torchvision -c pytorch
 
 #+END_SRC
 
-We are using the CrowdAI conda recipe for Malmo, so we'll need to install that separately:
+If you're on Linux or Mac OS, we are using the CrowdAI conda recipe for Malmo, so we'll need to install that separately:
 #+BEGIN_SRC bash
 conda install -c crowdai malmo
 #+END_SRC
 
-Next we'll throw in pulp and the z3-solver package, which have no Conda recipe, along with some Python helpers used by various development tools:
+If you are on Windows, install Malmo and its dependencies using the instructions in the README [[https://github.com/Microsoft/malmo][here]].
+
+Next we'll throw in pulp, which has no Conda recipe, along with some Python helpers used by various development tools:
 #+BEGIN_SRC bash
 
-pip install pulp z3-solver flake8 mypy jedi autopep8 yapf black pylint
+pip install pulp flake8 mypy jedi autopep8 yapf black pylint
 #+END_SRC
 
 In non-Malmo exercises, you'll need to run this in any Terminal window you want to use (or use emacs's =pyenv-venv= package, or...):
@@ -48,3 +49,4 @@ python mission_script.py
 
 #+END_SRC
 
+On Windows, you can run your downloaded Malmo installation's =launchClient.bat= from a Powershell prompt and your Python script from Anaconda's =cmd=.

@@ -54,7 +54,7 @@ import json
 import time
 import math
 
-with open('Crafting.json') as f:
+with open('crafting.json') as f:
     Crafting = json.load(f)
 
 items = Crafting['Items']

@@ -269,9 +269,7 @@ def best_first(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional
 At this point, we are equipped to explore /A*/, an extremely popular informed search algorithm that combines the best aspects of best-first search (exploring promising parts of the search space) and Dijkstra's search (exploring cheaper options before more expensive ones).
 
 22. [@22] Can you think of a way to combine the priority information from Dijkstra's algorithm (cost to get there) and from best-first search (estimated cost to reach the goal)?  What is the priority in the search state, and what do you track in =best_costs=?
-
-*************** TODO Next time, talk about tie breaking either by path length, path cost, h-value, visited, -visited. :noexport:
-*************** END
+23. If two nodes had the same priority, what are some ways in which you might break ties?  How would they behave differently?  Note that you could break ties on e.g. path length, path cost, heuristic value, or the number of nodes visited so far--or on other measures!
 
 #+BEGIN_SRC python
 def astar(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
@@ -285,7 +283,7 @@ def astar(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List
         visit_count += 1
         neighbors = find_neighbors(terrain, node)
         for neighbor, neighbor_cost in neighbors:
-            # F. And A* also does something with each neighbor node.  You need to calculate both the heuristic value and the cost to get to this neighbor, and do something with the result.
+            # F. And A* also does something with each neighbor node.  You need to calculate both the heuristic value and the cost to get to this neighbor, and /add them together/.
             # Hint: `heapq.heappush` is still useful.
             # Be sure to track the best cost and predecessor for each new node in `best_costs`, and use your combined priority for this node to guide the search.
             pass
@@ -294,12 +292,12 @@ def astar(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List
 
 #+END_SRC 
 
-23. [@23] Compare your implementation of A* to your previous implementations in terms of nodes visited and paths found.
-24. Is the first solution found by A* in this domain guaranteed to be cost-optimal?
-25. What if we replace calls to the heuristic function (used as part of determining priority) with the constant 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
-26. How about if we replace the uses of the cost so far in the priority calculations with 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
-27. When a heuristic /overestimates/ the distance to the goal, it is called /inadmissible/.  We could make our heuristic inadmissible just by multiplying its output by some factor, say 10, before using its results in the priority calculation.  How does this affect nodes visited and path found for the examples given above?
-28. If you want an extra credit opportunity (up to 10% assignment credit), come up with some interesting/cool map text files and submit them as separate text files along with your assignment.  In this reflection slot, write why you think each map is interesting. 
+24. [@24] Compare your implementation of A* to your previous implementations in terms of nodes visited and paths found.
+25. Is the first solution found by A* in this domain guaranteed to be cost-optimal?
+26. What if we replace calls to the heuristic function (used as part of determining priority) with the constant 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
+27. How about if we replace the uses of the cost so far in the priority calculations with 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
+28. When a heuristic /overestimates/ the distance to the goal, it is called /inadmissible/.  We could make our heuristic inadmissible just by multiplying its output by some factor, say 10, before using its results in the priority calculation.  How does this affect nodes visited and path found for the examples given above?
+29. If you want an extra credit opportunity (up to 10% assignment credit), come up with some interesting/cool map text files and submit them as separate text files along with your assignment.  In this reflection slot, write why you think each map is interesting. 
 
 A* has interesting behavior with inadmissible heuristics, generally finding solutions earlier---but without the guarantee of optimality.  
 There is a deep literature in tweaks on A* for different domains and applications, including replanning (finding a new path after the path we've been following becomes invalid), anytime planning (getting a suboptimal solution quickly but improving the plan over time), and many other areas.  

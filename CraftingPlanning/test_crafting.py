@@ -149,3 +149,5 @@ visited, cost, path, dt = run_trial(plan_width,
                                     State.from_dict({}),
                                     State.from_dict({'rail': 1}))
 expect_nearly(cost, 128, 0.1, "Path length")
+
+print("Total score:", score[0], "/", score[1], "==", score[0] / score[1])

@@ -66,23 +66,6 @@ def expect_nearly(v1, v2, fraction, explanation):
         print("Got", v1, "Expected", v2, "Acceptable delta:", fraction * v2)
 
 
-def expect_model(m1, m2, fraction, explanation):
-    print(explanation)
-    register_point()
-    good = True
-    for k2, v2 in m2.items():
-        assert k2 in m1
-        v1 = m1[k2]
-        if abs(v1 - v2) > fraction * v2:
-            print("Got", m1, "=", v1, "Expected", v2, "Acceptable delta:", fraction * v2)
-            good = False
-            break
-    if good:
-        earn_point("Values equal, +1")
-    else:
-        miss_point("Values not equal, +0")
-
-
 print("Solve castle_1 with varying parameters")
 
 print("5,7256")
@@ -108,3 +91,5 @@ expect_nearly(opt, 960, 0.01, "Optimal duration")
 
 opt, model = solve_castle_2(4000, 128, 1500)
 expect_nearly(opt, 952.6, 0.01, "Optimal duration")
+
+print("Total score:", score[0], "/", score[1], "==", score[0] / score[1])

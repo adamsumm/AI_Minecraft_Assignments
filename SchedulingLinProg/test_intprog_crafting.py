@@ -66,23 +66,6 @@ def expect_nearly(v1, v2, fraction, explanation):
         print("Got", v1, "Expected", v2, "Acceptable delta:", fraction * v2)
 
 
-def expect_model(m1, m2, fraction, explanation):
-    print(explanation)
-    register_point()
-    good = True
-    for k2, v2 in m2.items():
-        assert k2 in m1
-        v1 = m1[k2]
-        if abs(v1 - v2) > fraction * v2:
-            print("Got", m1, "=", v1, "Expected", v2, "Acceptable delta:", fraction * v2)
-            good = False
-            break
-    if good:
-        earn_point("Values equal, +1")
-    else:
-        miss_point("Values not equal, +0")
-
-
 print("Solve planning with intprog")
 
 print("{bench}->{stone_pickaxe}")
@@ -116,3 +99,5 @@ expect_exactly(opt, 837, "Optimal cost")
 
 opt, model = solve_intprog_compact({}, {'rail': 1, 'cart': 1}, 10)
 expect_exactly(opt, 172, "Optimal cost")
+
+print("Total score:", score[0], "/", score[1], "==", score[0] / score[1])
