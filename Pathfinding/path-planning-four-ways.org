@@ -26,13 +26,13 @@ We'll implement and compare four related algorithms:
 You may have encountered some of these algorithms in previous classes, since graph search is a fundamental technique in computer science.
 If not, don't worry!
 In this course, assignments include a series of /reflections/ intended to help you develop the insights required to implement the assignment.
-Let's begin with a reflection to practice. 
+Let's begin with a reflection to practice.
 Type your answers (with the question numbers) into =path_planning.txt=.
 
 1. In your own words, what is a /graph/ in the discrete mathematics/computer science sense?  How might you represent a graph using data structures in a computer program?  Pseudo-code is fine.
 2. Have you encountered any of the above algorithms before?
 3. Besides planning movement through a physical space, what other uses do you think they might have in analyzing real-world systems, understanding the behavior of computer programs, or other areas?  Describe one other compelling use case for graph search.
-4. If we restrict our attention to four-connected graphs (like chess-boards or grids), does that change our answer to question (1)?  Is there another, more appropriate representation we might consider that saves memory space or seems easier to process? 
+4. If we restrict our attention to four-connected graphs (like chess-boards or grids), does that change our answer to question (1)?  Is there another, more appropriate representation we might consider that saves memory space or seems easier to process?
 
 In these assignments, you will also find source code examples and skeletons; it is highly recommended that you type these out again by hand rather than copying and pasting, to ensure that you read them closely.
 Some code snippets will be labeled "Example", and you are encouraged to try them out either by inserting them directly into your code and seeing what they do, or experimenting at the command line interpreter:
@@ -49,7 +49,7 @@ The goal of this assignment is for you to:
 - Consider how /domain knowledge/ can help guide the development of AI algorithms, and the tension between generic and specialized approaches.
 
 Make sure your Python file for this assignment, =path_planning.py=, has these modules imported:
- 
+
 #+BEGIN_SRC python
 from typing import Set, Dict, Tuple, Optional, Sequence, List
 import heapq
@@ -89,7 +89,7 @@ We are going to add an additional wrinkle here, which is that different tiles ha
 
 - 🌿, 🌉, and 🌲 cost 1 point since they're easy to walk past
 - 🌼 costs 2 points since we'd rather not stomp on the flowers.
-- 🌊 costs 5 points since we really don't want to get our clothes wet.
+- 🔥 costs 1000 points since we really don't want to light on fire.
 
 So, depending on the kind of tile at a given location, we also want to pick the right /cost/ for moving through that tile.
 
@@ -104,7 +104,7 @@ def find_neighbors(terrain:Map, p:Point) -> List[Tuple[Point, int]]:
     # A. Your code here...
     # Feel free to introduce other variables if they'd be helpful too.
     return neighbors
-#+END_SRC 
+#+END_SRC
 
 To try it out:
 
@@ -169,13 +169,13 @@ def breadth_first(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optio
         neighbors = find_neighbors(terrain, node)
         for neighbor, neighbor_cost in neighbors:
             # B. And does something with each neighbor node (where does the new node go in the list?)
-            # Be sure to track the best cost and predecessor for each new node in `best_costs` too, and avoid re-expanding nodes which we've seen before with better costs. 
+            # Be sure to track the best cost and predecessor for each new node in `best_costs` too, and avoid re-expanding nodes which we've seen before with better costs.
             pass
         pass
     # C. If any path was found to goal, return the best such path.
     # Otherwise, return:
     return (visit_count, -1, None)
-#+END_SRC  
+#+END_SRC
 
 Try it out with a few different coordinate pairs:
 
@@ -275,7 +275,7 @@ At this point, we are equipped to explore /A*/, an extremely popular informed se
 
 #+BEGIN_SRC python
 def astar(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List[Point]]]:
-    # G. What do we use as priority values in the open list? 
+    # G. What do we use as priority values in the open list?
     open_list: List[Tuple[int, Point]] = [(?, start)]
     # In best_costs we still want to track real costs
     best_costs: Dict[Point, Tuple[int, Point]] = {start:(0, start)}
@@ -292,17 +292,17 @@ def astar(terrain:Map, start:Point, goal:Point) -> Tuple[int, int, Optional[List
         pass
     return (visit_count, -1, None)
 
-#+END_SRC 
+#+END_SRC
 
 23. [@23] Compare your implementation of A* to your previous implementations in terms of nodes visited and paths found.
 24. Is the first solution found by A* in this domain guaranteed to be cost-optimal?
 25. What if we replace calls to the heuristic function (used as part of determining priority) with the constant 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
 26. How about if we replace the uses of the cost so far in the priority calculations with 0?  Does this behave like a different algorithm in terms of nodes visited and path found?
 27. When a heuristic /overestimates/ the distance to the goal, it is called /inadmissible/.  We could make our heuristic inadmissible just by multiplying its output by some factor, say 10, before using its results in the priority calculation.  How does this affect nodes visited and path found for the examples given above?
-28. If you want an extra credit opportunity (up to 10% assignment credit), come up with some interesting/cool map text files and submit them as separate text files along with your assignment.  In this reflection slot, write why you think each map is interesting. 
+28. If you want an extra credit opportunity (up to 10% assignment credit), come up with some interesting/cool map text files and submit them as separate text files along with your assignment.  In this reflection slot, write why you think each map is interesting.
 
-A* has interesting behavior with inadmissible heuristics, generally finding solutions earlier---but without the guarantee of optimality.  
-There is a deep literature in tweaks on A* for different domains and applications, including replanning (finding a new path after the path we've been following becomes invalid), anytime planning (getting a suboptimal solution quickly but improving the plan over time), and many other areas.  
+A* has interesting behavior with inadmissible heuristics, generally finding solutions earlier---but without the guarantee of optimality.
+There is a deep literature in tweaks on A* for different domains and applications, including replanning (finding a new path after the path we've been following becomes invalid), anytime planning (getting a suboptimal solution quickly but improving the plan over time), and many other areas.
 Some approaches like jump-point search or \theta* try to further minimize the number of nodes examined by taking advantage of structural details of top-down path planning.
 
 Now that you're all done with this, you're ready for /task planning./
