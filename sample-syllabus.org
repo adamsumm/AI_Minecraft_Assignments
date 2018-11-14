@@ -1,0 +1,107 @@
+#+OPTIONS: ':t *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:nil broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:nil e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:nil todo:t |:t
+#+TITLE: Minecraft AI Assignments Sample Syllabus
+#+AUTHOR: Joseph C. Osborn
+#+EMAIL: joseph.osborn@pomona.edu
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 26.1 (Org mode 9.1.14)
+#+LATEX_HEADER: \usepackage[margin=0.5in]{geometry}
+
+
+* About this course
+
+CSCI 151 "Artificial Intelligence" is an advanced elective course in computer science.
+Its goals are twofold: to introduce students to fundamental techniques of AI work, and to problematize popular notions of AI in order to cultivate a critical technical practice.
+The main takeaway is that AI is not a well-defined term because it is not at all clear what "intelligence" means.
+Instead, this course focuses on /automated decision-making/ and explores how computers can come to make several different /kinds/ of decisions.
+Even this gloss is somewhat awkward (in the end, if humans act on the determinations of an automated decision-making system, the humans themselves are the ones making the decision), but it is an improvement over "AI."
+
+* Infrastructure
+
+Python is somewhat notorious for having an awkward time of managing different OS, language, and package versions.
+In this course, I will encourage the use of =conda= to manage the Python installation and associated packages; I cannot provide technical support for other installation methods.
+
+We are trying something new with the assignments in this course: they are all motivated by, and many take place within, Minecraft.
+You do not need to own a copy of Minecraft to execute the programming assignments; a special version is made available via Microsoft Research as Project Malmo.
+
+* Grading
+
+This is a project-based course in AI with a strong analytical component.
+Homework projects comprise the majority of the grade in the course (60%).
+Because analytic reasoning depends on a strong grasp of the fundamentals, we will frequently practice remembering material encountered earlier; every class will start with a quiz, and these quizzes will sum up to 15% of the grade.
+The final project makes up the remainder of the grade for the course, and this project has both analytic and programming components.
+
+- Homework (60%, 10% per assignment)
+- Quizzes and reading reactions (15%)
+- Final Project (25%)
+
+* Homework
+
+Homework projects are the cornerstone of the course.
+The homeworks consist of both analytic work (typed reflections) and implementation work (Python code)...
+ 
+To sum up, weighting for the homeworks is as follows:
+
+- 25% Reasonable attempt at completing the assignment by the due date (judged by my visual inspection)
+- 25% Effortful and meaningful reflection by the due date
+- 25% Automatic grader points before end of semester
+- 25% Substantive peer review of another student's program (within four days after due date)
+
+...
+
+* Final Project
+
+The final project will consist of a significant implementation effort coupled with a strong analytic or critical justification for the project and a class presentation.  
+Final projects must be executed in teams of up to five people. 
+
+I expect to see final projects in three main categories but I am open to others:
+1. A tutorial introduction, in the Minecraft domain, for an AI technique which was not covered by previous homework projects; this could serve as homework for a future iteration of the course.
+2. A project leveraging an AI technique for a different domain, where either the given application is not usually tackled with that technique /or/ the scope and execution are significant or novel.
+3. A significant extension of a homework project, either using new techniques or into new domains.
+
+...
+
+* Class Schedule
+
+All projects are due five minutes before midnight on the due date.
+The only exceptions are the project post-mortems which are due on 12-19 at 14:00.
+
+(Instructors: Please feel free to rearrange these topics as you like.  Some of the "reflecting on" topics can be merged into the preceding day's lecture.)
+
+#+NAME: schedule
+#+ATTR_LATEX: :align l|l|p{4in}
+| Topic | Subject                                 | Notes                                                                                                      |   |
+|-------+-----------------------------------------+------------------------------------------------------------------------------------------------------------+---|
+|     1 | Introduction and Search                 | Students can start on assignment 1                                                                         |   |
+|     2 | Informed Search                         | At this point all the topics of assignment 1 are covered in lecture                                        |   |
+|     3 | Reflecting on Path Planning             | It may be useful to go over (some of) the reflections in lecture before assignment 1's due date            |   |
+|     4 | Classical Planning                      | Students can start on assignment 2                                                                         |   |
+|     5 | Iterative Widening                      | At this point the topics of assignment 2 are covered in lecture                                            |   |
+|     6 | Constraint Satisfaction                 |                                                                                                            |   |
+|     7 | Reflecting on Planning                  | Here you can go over assignment 2 a bit before its due date                                                |   |
+|     8 | Linear Programming                      | Students can start on assignment 3                                                                         |   |
+|     9 | Modeling with Linear Programming        | Students have all they need for assignment 3                                                               |   |
+|    10 | Integer Programming                     | Students can start on assignment 4                                                                         |   |
+|    11 | Reflecting on Linear Programming        | You might go over assignment 3 just before it's due                                                        |   |
+|    12 | Planning via Constraint Satisfaction    | Students have what the need for assignment 4                                                               |   |
+|    13 | Machine Learning                        |                                                                                                            |   |
+|    14 | Reflecting on Integer Programming       | You might go over assignment 4 just before it's due                                                        |   |
+|    15 | Perceptrons                             |                                                                                                            |   |
+|    16 | Backpropagation                         |                                                                                                            |   |
+|    17 | Search by Sampling                      |                                                                                                            |   |
+|    18 | Reinforcement Learning                  | Refer to [[https://drive.google.com/file/d/1xeUDVGWGUUv1-ccUMAZHJLej2C7aAFWY/view][Sutton & Barto]] chapter 6                                                                          |   |
+|    19 | Deep RL                                 | For the next class, read [[https://thegradient.pub/why-rl-is-flawed/][Reinforcement Learning's Foundational Flaw]] and  [[https://thegradient.pub/how-to-fix-rl/][How to Fix Reinforcement Learning]] |   |
+|    20 | Logic and Satisfiability                |                                                                                                            |   |
+|    21 | Project Proposals                       | Decide projects and teams by end of day, email me.                                                         |   |
+|    22 | Logical Resolution                      |                                                                                                            |   |
+|    23 | Logic Programming                       |                                                                                                            |   |
+|    24 | Convolutional Neural Networks           |                                                                                                            |   |
+|    25 | Logic Revisited                         |                                                                                                            |   |
+|    26 | Recurrent Convolutional Neural Networks |                                                                                                            |   |
+|    27 | Problems and Opportunities in AI        |                                                                                                            |   |
+|    28 | RCNNs Revisited                         |                                                                                                            |   |

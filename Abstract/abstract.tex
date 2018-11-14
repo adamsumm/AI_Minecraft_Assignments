@@ -1,0 +1,41 @@
+% File: formatting-instruction.tex
+\documentclass[letterpaper]{article}
+\usepackage{aaai19}
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{courier}
+\frenchspacing
+\setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in}
+\pdfinfo{
+  /Title (The Minecraft Projects)
+  /Author (Adam Summerville and Joseph C. Osborn)}
+\setcounter{secnumdepth}{0}
+\begin{document}
+% The file aaai.sty is the style file for AAAI Press 
+% proceedings, working notes, and technical reports.
+% 
+\title{The Minecraft Projects}
+\author{Adam Summerville\\Computer Science Department\\California State Polytechnic University, Pomona \And Joseph C.\ Osborn\\Computer Science Department\\Pomona College}
+\maketitle
+\begin{abstract}
+  \begin{quote}
+    The Pac-Man Projects are a landmark model assignment for AI courses focusing on agent behaviors.  We propose an analogous suite of assignments in the domain of Minecraft with applications in path and task planning, incorporating both iterative widening and partial-order planning via integer programming.
+  \end{quote}
+\end{abstract}
+
+DeNero and Klein's Pac-Man Projects~\cite{denero2010teaching} are a landmark suite of assignments covering a broad variety of AI techniques.
+Driven by similar concerns, we use the game Minecraft as a motivating context for AI assignments.
+Students will likely be familiar with Minecraft (as of 2016, nearly 107 million copies had been sold), and it is becoming better-known in the AI community due to Microsoft's Project Malmo platform and the 2018 AIIDE MARL\"{O} Workshop.
+One unusual aspect of these assignments is that exceptional homework could conceivably translate into novel research publications!
+
+We have developed four assignments covering key areas:\@ path planning, task planning via iterative widening, and scheduling and production planning by linear (integer) programming.
+Each can be scaled or scaffolded more or less, as the class requires, and each features an automatic grader and reflection questions for students' analytic work.
+While these exercises use simplified Malmo-like environments, the agents' actions could readily be realized in Minecraft worlds using the Malmo API.\@
+We provide Python starter code; Malmo's API also supports Java, C\#, and other languages via an OpenAI Gym API.
+A Conda environment and setup instructions for working the exercises is also given.
+
+\bibliography{abstract}
+\bibliographystyle{aaai}
+
+\end{document}

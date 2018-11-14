@@ -10,12 +10,9 @@
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
 #+CREATOR: Emacs 26.1 (Org mode 9.1.13)
- 
-This assignment is the second part of the planning problem sequence.
-The first part is "Path Planning Four Ways," which is a prerequisite for this section.
 
 In this assignment, you will be making a simple satisficing Minecraft crafting planner.
-Given an initial state, you will want to find a series of actions that gets you to a desired goal state. 
+Given an initial state, you will want to find a series of actions that gets you to a desired goal state.
 You will first try an implementation of generic graph search (Dijkstra's algorithm) to discover whether it is suitable for this task, and then implement a specialized planning algorithm called Iterative Widening.
 
 In this assignment you will:
@@ -37,8 +34,8 @@ The automatic tests for this module are in =test_crafting.py=.
 You can run them with =python test_crafting.py=.
 Feel free to modify this file as you like to add tests, try out new examples, and so on.
 
-First we need to load =crafting.json=, a json file that has a subset of the Minecraft recipes in it (with some abstractions to account for travel time to different raw materials).  
-We'll also throw in some other imports we'll need later. 
+First we need to load =crafting.json=, a json file that has a subset of the Minecraft recipes in it (with some abstractions to account for travel time to different raw materials).
+We'll also throw in some other imports we'll need later.
 
 #+BEGIN_SRC python
 import json
@@ -120,7 +117,7 @@ class State:
         return s
 
     def __ge__(self, other: 'State') -> bool:
-        # C. How do we know whether one state (self) contains everything that's inside of another (other)? 
+        # C. How do we know whether one state (self) contains everything that's inside of another (other)?
         pass
 
     def __lt__(self, other: 'State') -> bool:
@@ -159,7 +156,7 @@ print("It worked!")
 #+END_SRC
 
 Now that we have our state representation, we can rephrase the recipes in terms of what they need from the state.
-Python has a useful datastructure---=namedtuple=---we can use for this purpose, so we'll have a =namedtuple= type called =Recipe=.  
+Python has a useful datastructure---=namedtuple=---we can use for this purpose, so we'll have a =namedtuple= type called =Recipe=.
 
 #+BEGIN_SRC python
 class Recipe(NamedTuple):
@@ -191,7 +188,7 @@ Let's reflect.
 6. What was the action representation?
 7. How many possible actions are there in the whole domain, and how many of those are possible in a given state?
 
-In fact, we can consider any planning problem in terms of states and a transition relation between states and those actions which are valid in that state. 
+In fact, we can consider any planning problem in terms of states and a transition relation between states and those actions which are valid in that state.
 If we're thinking about path planning as search on the graph of possible locations (with edges given by a connectedness relation), task planning can be seen as search on the graph of possible states (with edges given by the state transition relation).
 Let's implement the transition relation now:
 
@@ -218,15 +215,15 @@ Let's try it.
 
 *************** TODO Next time, do DFS instead of Dijkstra.        :noexport:
 *************** END
- 
+
 #+BEGIN_SRC python
-def plan_dijkstra(initial: State, goal: State, limit:int) -> Tuple[int, int, Optional[List[str]]]:    
+def plan_dijkstra(initial: State, goal: State, limit:int) -> Tuple[int, int, Optional[List[str]]]:
     start_time = time.time()
-    # E. Implement it here!  When you find a solution, print out the number of nodes visited and the time it took to get there.  If you don't find a solution, print out the number of nodes visited and the time it took to fail. 
+    # E. Implement it here!  When you find a solution, print out the number of nodes visited and the time it took to get there.  If you don't find a solution, print out the number of nodes visited and the time it took to fail.
     # Feel free to use or modify the solution printing routine from the last exercise.
     # Return a tuple of (nodes_visited, -1, None) if no path exists, or else a tuple of (nodes_visited, cost, path) where path is a list of recipe names.
     # You should also use limit to avoid visiting too many nodes before returning _something_.
-    # Finally, you can check whether a State _satisfies_ a goal by checking `state >= goal` 
+    # Finally, you can check whether a State _satisfies_ a goal by checking `state >= goal`
     pass
 #+END_SRC
 
@@ -239,7 +236,7 @@ print(plan_dijkstra(State.from_dict({}),
 print(plan_dijkstra(State.from_dict({'bench':1,'stone_pickaxe':1}),
                     State.from_dict({'ingot':1}),
                     200000))
-#+END_SRC  
+#+END_SRC
 
 9. [@9] Imagine applying A* here.  What heuristic would you want to use?  Is that heuristic admissible?  Is that a problem?
 10. What's the largest planning problem (initial and goal state) you can think up which your Dijkstra's implementation can solve optimally within 30 seconds?  How many nodes does it visit and how long does it take in wall-clock time?
@@ -261,7 +258,16 @@ If this recipe were the only action, we could formulate the problem as a domain 
 We can automate the intuition of (15) by transforming our states into /combinations of propositions./
 A /proposition/ here is a logical fact entailed by the state; for example "I have at least one piece of wood," "I have at least two pieces of wood," "I have at least one plank", and so on.
 Note that if we have two pieces of wood then we necessarily have one piece of wood as well!
-/Iterative widening/ is a planning algorithm which works by abstracting away differences between states and discarding states which are too similar to states which have been seen already in this iteration.
+/Iterative Widening/ is a planning algorithm which works by abstracting away differences between states and discarding states which are too similar to states which have been seen already in this iteration.
+
+In /Iterative Widening/ we start with the minimal width --- 1 --- and as we are traversing the state space, we prune away a state if it does not have a unique proposition that we have never encountered before.
+For Minecraft, this means that at width 1, we can only craft things that don't require multiple items -- limiting ourselves to wood, sticks, planks, and a bench.
+If our goal includes an item beyond those, then we will need to /widen/ our state space to 2.
+In the set of 2 we can now craft things that require multiple items at once, but for the most part we will always need a bench, some sticks, and some other material, so most plans will require a width of 3.
+At each step in /Iterative Widening/ if we can't find a new, unique, never before-seen set of items, then we will fail and move on to the next width.
+
+
+
 Two states are similar if they share some number of propositions in common---so if the /width/ measure is one, then when we have seen one state where we have at least one stick we subsequently ignore every other state we might find later with one or more sticks (we'll relax this a little to say "any sufficiently different state is worth exploring"---so if it has at least a few propositions that are unique with respect to all seen combinations of a given width, we will consider it).
 To regain completeness---to always find a solution if one exists---the size of the combinations of items considered in this similarity computation is gradually increased until a solution is found.
 
@@ -269,7 +275,7 @@ Returning to the problem of creating a stone pickaxe, any state which has a benc
 It also produces a propositions stating that we have a stone pickaxe.
 We need to know the full set of possibly interesting propositions in the world (for the purposes of applying recipes), so we want to accumulate both the propositions involved with making the recipe and its outputs.
 In order to know what all the combinations of propositions might be during planning, we need to all the individual propositions that might come up.
-We also need to be able to convert initial and goal states into sets of propositions, so we'll have a function to do that once we start our search algorithm: 
+We also need to be able to convert initial and goal states into sets of propositions, so we'll have a function to do that once we start our search algorithm:
 
 #+BEGIN_SRC python
 class Proposition(NamedTuple):
@@ -387,7 +393,7 @@ print(width_search({},{'cart':1},4))
 #+END_SRC
 
 16. [@16] What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit at its deepest $W$ level, how high does $WMax$ have to be, and how long does it take in seconds
-17. How does increasing or decreasing the value of $WMax$ change the time to find a solution, or: what sorts of craft planning situations benefit from increasing $WMax$? 
+17. How does increasing or decreasing the value of $WMax$ change the time to find a solution, or: what sorts of craft planning situations benefit from increasing $WMax$?
 18. Is iterative widening guaranteed to give optimal solutions for this problem?  In other words, does there exist a crafting problem where a width bound of $w$ gives a suboptimal solution while $w+1$ gives a better one?  What does this mean for implementing your algorithm---where can you take shortcuts to get better performance if you already lost optimality, or can you not take such shortcuts?
 19. Can you think of a way to apply iterative widening to the path planning problem?  Do you think it would perform better than A* there or worse?  Why?
 
