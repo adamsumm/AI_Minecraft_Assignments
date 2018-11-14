@@ -4,7 +4,6 @@
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
 #+TITLE: Path Planning Four Ways
-#+DATE: <2018-08-29>
 #+AUTHOR: Joseph C. Osborn
 #+EMAIL: joseph.osborn@pomona.edu
 #+LANGUAGE: en

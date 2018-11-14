@@ -4,7 +4,6 @@
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
 #+TITLE: Craft Planning with Iterative Widening
-#+DATE: <2018-08-23>
 #+EMAIL: joseph.osborn@pomona.edu
 #+LANGUAGE: en
 #+SELECT_TAGS: export
@@ -47,7 +46,7 @@ import itertools
 
 with open('crafting.json') as f:
     Crafting = json.load(f)
-#+END_SRC python
+#+END_SRC
 
 You may want to try printing out some different information from =Crafting= to get a feel for its schema:
 
@@ -245,6 +244,7 @@ print(plan_dijkstra(State.from_dict({'bench':1,'stone_pickaxe':1}),
 
 Let's compare against a dedicated planning algorithm, rather than applying graph search naively.
 Planning domains have some significant differences from general graph search problems---let's reflect on what they might be.
+
 11. [@11] In graph search, what is the goal of a search?  How is that different from the goal of a planning problem?
 12. In graph search, what are the preconditions for traversing an edge?  How does this differ in a planning problem?
 13. In graph search, detecting cycles is relatively cheap.  Is that the case for planning problems?
@@ -253,7 +253,8 @@ Planning domains have some significant differences from general graph search pro
 Think about a recipe like making a stone pickaxe.
 Every possible planning state either satisfies its preconditions or doesn't.
 If this recipe were the only action, we could formulate the problem as a domain with just three /abstract/ states---one without a pickaxe and without the needed supplies, one without a pickaxe and with the needed supplies, and one with a pickaxe (and it doesn't matter what else is in the state).
-15. If we had a domain with just two recipes (/punch for wood/ and /wood planks/), what would be the abstract states in the sense used above?
+
+15. [@15] If we had a domain with just two recipes (/punch for wood/ and /wood planks/), what would be the abstract states in the sense used above?
 
 We can automate the intuition of (15) by transforming our states into /combinations of propositions./
 A /proposition/ here is a logical fact entailed by the state; for example "I have at least one piece of wood," "I have at least two pieces of wood," "I have at least one plank", and so on.
@@ -345,7 +346,7 @@ def see_state(state:State, combinations:List[Set[Proposition]], seen_combination
     return any_new
 #+END_SRC
 
-The outer loop of iterative widening gradually increases the bound $W$ up to a given $WMax$.
+The outer loop of iterative widening gradually increases the bound $W$ up to a given $\mathit{WMax}$.
 The inner loop has the same skeleton as a standard graph search, with the exception that non-novel states are immediately thrown away.
 For now, implement iterative widening's inner loop using breadth-first search.
 
@@ -392,8 +393,8 @@ print(width_search({},{'rail':1},4))
 print(width_search({},{'cart':1},4))
 #+END_SRC
 
-16. [@16] What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit at its deepest $W$ level, how high does $WMax$ have to be, and how long does it take in seconds
-17. How does increasing or decreasing the value of $WMax$ change the time to find a solution, or: what sorts of craft planning situations benefit from increasing $WMax$?
+16. [@16] What's the largest planning problem (initial and goal state) you can think up which your algorithm can solve within 30 seconds?  How many nodes does it visit at its deepest $W$ level, how high does $\mathit{WMax}$ have to be, and how long does it take in seconds
+17. How does increasing or decreasing the value of $\mathit{WMax}$ change the time to find a solution, or: what sorts of craft planning situations benefit from increasing $\mathit{WMax}$?
 18. Is iterative widening guaranteed to give optimal solutions for this problem?  In other words, does there exist a crafting problem where a width bound of $w$ gives a suboptimal solution while $w+1$ gives a better one?  What does this mean for implementing your algorithm---where can you take shortcuts to get better performance if you already lost optimality, or can you not take such shortcuts?
 19. Can you think of a way to apply iterative widening to the path planning problem?  Do you think it would perform better than A* there or worse?  Why?
 

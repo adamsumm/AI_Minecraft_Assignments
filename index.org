@@ -47,19 +47,22 @@
 (message "ok")
 #+END_SRC
 
+#+RESULTS:
+: ok
 
-| Summary      | A large package of interesting projects in Minecraft-like domains with applications to Minecraft itself.  These assignments cover a variety of AI topics from path and task planning to constraint satisfaction.                                                                                                                                                 |
-| Topics       | Path planning, classical planning, iterative widening, constraint satisfaction, linear programming, integer programming                                                                                                                                                                                                                                          |
-| Audience     | Upper division undergraduate students in a general AI course; could be scaled down to early stage undergraduates                                                                                                                                                                                                                                                 |
-| Difficulty   | Moderate to high, depending how much sample code is provided and how much scaffolding is given                                                                                                                                                                                                                                                                   |
-| Strengths    | Plenty of analytic as well as implementation work, interesting domain for students                                                                                                                                                                                                                                                                               |
-| Weaknesses   | Each topic is covered in only as much depth as a week or two will allow.                                                                                                                                                                                                                                                                                         |
-| Dependencies | Python examples are provided although Malmo should work with Java or C# as well.  A Conda-based installation process is given which may or may not work out of the box on Windows (only the Malmo portion could pose difficulty).  Students should be familiar with graph search from algorithms coursework.  Python knowledge a plus but not strictly required. |
-| Variants     | This is just a sampling of possible assignments in the Minecraft domain.  These can be given with more or less scaffolding and analytic content, in almost any order.  In the linear and integer programming portions, students could be responsible for implementing their own solvers.                                                                         |
+
+| Summary      | A package of interesting projects in Minecraft-like domains with applications to Minecraft itself.  These assignments cover a variety of AI topics from path and task planning to constraint satisfaction.                                                                                                                                                       |
+| Topics       | Path planning, classical planning, iterative widening, constraint satisfaction, linear programming, integer programming.                                                                                                                                                                                                                                         |
+| Audience     | Upper division undergraduate students in a general AI course; could be scaled down to early stage undergraduates.                                                                                                                                                                                                                                                |
+| Difficulty   | Moderate to high, depending how much sample code is provided and how much scaffolding is given.                                                                                                                                                                                                                                                                  |
+| Strengths    | Plenty of analytic and implementation work, interesting domain for students.                                                                                                                                                                                                                                                                           |
+| Weaknesses   | Each topic is covered in only as much depth as a week or two will allow.  If the analytic work is not supported by in-class exercises, students may feel lost unless they are very self-motivated.                                                                                                                                                               |
+| Dependencies | Python examples are provided, although Malmo should work with Java or C# as well.  A Conda-based installation process is given which may or may not work out of the box on Windows (only the Malmo portion could pose difficulty).  Students should be familiar with graphs from algorithms or discrete math coursework.  Python knowledge a plus but not strictly required (if students are not familiar with Python, they will need some extra help). |
+| Variants     | This is just a sample of possible assignments in the Minecraft domain.  These can be given with more or less scaffolding and analytic content, in almost any order.  In the linear and integer programming portions, students could be responsible for implementing their own solvers.  Students could also run their agents or plans in the real Minecraft domain via Malmo as a bonus. |
 
 Setting up the environment is detailed in [[file:setup.org][Setup]].
 
-Each assignment has an automatic grading test suite as well as narrative writeups with plenty of scaffolding.
+Each assignment has an automatic grading test suite (which can be combined with command line tools to create csv files) as well as narrative writeups with plenty of scaffolding.
 
 These projects are split into four major assignments:
 
@@ -75,3 +78,9 @@ These projects are split into four major assignments:
   - [[file:SchedulingLinProg/intprog_planning.org][Integer Programming for Production Planning]]
   - Associated files:
     - [[file:SchedulingLinProg/crafting.json]]
+
+It is important to back up the homeworks with lecture material.
+One approach might be to introduce topics and algorithms in advance of assigning the homework, then revisit those topics and some of the reflection questions in class partway through the assignment.
+Another tack could be to give the reflection parts as in-class exercises.
+A [[file:sample-syllabus.org][sample syllabus]] is also provided.
+It covers many additional topics which will be incorporated into the Minecraft Assignments in the future.
